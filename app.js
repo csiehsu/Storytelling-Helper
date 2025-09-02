@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { Client, Events, GatewayIntentBits } from "discord.js";
 import express from "express";
 import {
   ButtonStyleTypes,
@@ -8,17 +9,14 @@ import {
   MessageComponentTypes,
   verifyKeyMiddleware,
 } from "discord-interactions";
-import { getRandomEmoji, DiscordRequest } from "./utils.js";
-import { getShuffledOptions, getResult } from "./game.js";
 import connectDB from "./database.js";
-import Item from "./item.model.js";
+import Item from "./models/item.model.js";
+import User from "./models/user.model.js";
 
 // Create an express app
 const app = express();
 // Get port, or default to 3000
 const PORT = process.env.PORT || 3000;
-// To keep track of our active games
-const activeGames = {};
 
 // connect to database
 const startApp = async () => {
@@ -42,6 +40,7 @@ app.post(
   async function (req, res) {
     // Interaction id, type and data
     const { id, type, data } = req.body;
+    const userId = req.body.member.user.id;
 
     /**
      * Handle verification requests
@@ -57,6 +56,69 @@ app.post(
     if (type === InteractionType.APPLICATION_COMMAND) {
       const { name } = data;
 
+      // "start" command
+      if (name === "start") {
+        // 從指令中取得參數
+        const options = req.body.data.options;
+        const characterName = options.find(
+          (opt) => opt.name === "角色名稱"
+        ).value;
+
+        try {
+          // 檢查使用者在資料庫中是否已經有角色
+          const existingUser = await User.findOne({
+            $or: [{ userId: userId }, { characterName: characterName }],
+          });
+          if (existingUser) {
+            return res.send({
+              type: 4, // 類型 4 代表 CHANNEL_MESSAGE_WITH_SOURCE
+              data: {
+                content: `角色已存在，如需協助請聯絡管理員。`,
+                flags: 64, // 標記為 64 (EPHEMERAL)，讓訊息只有使用者自己看得到
+              },
+            });
+          }
+
+          // 創建新使用者文件
+          const newUser = new User({
+            userId: userId,
+            characterName: characterName,
+          });
+
+          // 將新使用者資料儲存到資料庫
+          await newUser.save();
+
+          // 回覆玩家，創建成功
+          return res.send({
+            type: 4,
+            data: {
+              content: `角色 **${characterName}** 建立成功`,
+              flags: 64,
+            },
+          });
+        } catch (error) {
+          console.error("建立角色時發生錯誤:", error);
+
+          if (error.code === 11000) {
+            return res.send({
+              type: 4,
+              data: {
+                content: "角色已存在，如需協助請聯絡管理員。",
+                flags: 64,
+              },
+            });
+          } else {
+            return res.send({
+              type: 4,
+              data: {
+                content: "發生了未知錯誤，請稍後再試。",
+                flags: 64,
+              },
+            });
+          }
+        }
+      }
+
       // "items" command
       if (name === "items") {
         try {
@@ -67,15 +129,10 @@ app.post(
             })
             .join("\n");
           return res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            type: 4,
             data: {
-              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-              components: [
-                {
-                  type: MessageComponentTypes.TEXT_DISPLAY,
-                  content: itemList || "No items found.",
-                },
-              ],
+              flags: 64,
+              content: itemList || "No items found.",
             },
           });
         } catch (err) {
@@ -83,65 +140,8 @@ app.post(
         }
       }
 
-      // "test" command
-      if (name === "test") {
-        // Send a message into the channel where command was triggered from
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-            components: [
-              {
-                type: MessageComponentTypes.TEXT_DISPLAY,
-                // Fetches a random emoji to send from a helper function
-                content: `hello world ${getRandomEmoji()}`,
-              },
-            ],
-          },
-        });
-      }
-
-      // "challenge" command
-      if (name === "challenge" && id) {
-        // Interaction context
-        const context = req.body.context;
-        // User ID is in user field for (G)DMs, and member for servers
-        const userId =
-          context === 0 ? req.body.member.user.id : req.body.user.id;
-        // User's object choice
-        const objectName = req.body.data.options[0].value;
-
-        // Create active game using message ID as the game ID
-        activeGames[id] = {
-          id: userId,
-          objectName,
-        };
-
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-            components: [
-              {
-                type: MessageComponentTypes.TEXT_DISPLAY,
-                // Fetches a random emoji to send from a helper function
-                content: `Rock papers scissors challenge from <@${userId}>`,
-              },
-              {
-                type: MessageComponentTypes.ACTION_ROW,
-                components: [
-                  {
-                    type: MessageComponentTypes.BUTTON,
-                    // Append the game ID to use later on
-                    custom_id: `accept_button_${req.body.id}`,
-                    label: "Accept",
-                    style: ButtonStyleTypes.PRIMARY,
-                  },
-                ],
-              },
-            ],
-          },
-        });
+      // "crafting" command
+      if (name === "crafting") {
       }
 
       console.error(`unknown command: ${name}`);
@@ -149,101 +149,6 @@ app.post(
     }
 
     if (type === InteractionType.MESSAGE_COMPONENT) {
-      // custom_id set in payload when sending message component
-      const componentId = data.custom_id;
-
-      if (componentId.startsWith("accept_button_")) {
-        // get the associated game ID
-        const gameId = componentId.replace("accept_button_", "");
-        // Delete message with token in request body
-        const endpoint = `webhooks/${process.env.APP_ID}/${req.body.token}/messages/${req.body.message.id}`;
-        try {
-          await res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              // Indicates it'll be an ephemeral message
-              flags:
-                InteractionResponseFlags.EPHEMERAL |
-                InteractionResponseFlags.IS_COMPONENTS_V2,
-              components: [
-                {
-                  type: MessageComponentTypes.TEXT_DISPLAY,
-                  content: "What is your object of choice?",
-                },
-                {
-                  type: MessageComponentTypes.ACTION_ROW,
-                  components: [
-                    {
-                      type: MessageComponentTypes.STRING_SELECT,
-                      // Append game ID
-                      custom_id: `select_choice_${gameId}`,
-                      options: getShuffledOptions(),
-                    },
-                  ],
-                },
-              ],
-            },
-          });
-          // Delete previous message
-          await DiscordRequest(endpoint, { method: "DELETE" });
-        } catch (err) {
-          console.error("Error sending message:", err);
-        }
-      } else if (componentId.startsWith("select_choice_")) {
-        // get the associated game ID
-        const gameId = componentId.replace("select_choice_", "");
-
-        if (activeGames[gameId]) {
-          // Interaction context
-          const context = req.body.context;
-          // Get user ID and object choice for responding user
-          // User ID is in user field for (G)DMs, and member for servers
-          const userId =
-            context === 0 ? req.body.member.user.id : req.body.user.id;
-          const objectName = data.values[0];
-          // Calculate result from helper function
-          const resultStr = getResult(activeGames[gameId], {
-            id: userId,
-            objectName,
-          });
-
-          // Remove game from storage
-          delete activeGames[gameId];
-          // Update message with token in request body
-          const endpoint = `webhooks/${process.env.APP_ID}/${req.body.token}/messages/${req.body.message.id}`;
-
-          try {
-            // Send results
-            await res.send({
-              type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-              data: {
-                flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-                components: [
-                  {
-                    type: MessageComponentTypes.TEXT_DISPLAY,
-                    content: resultStr,
-                  },
-                ],
-              },
-            });
-            // Update ephemeral message
-            await DiscordRequest(endpoint, {
-              method: "PATCH",
-              body: {
-                components: [
-                  {
-                    type: MessageComponentTypes.TEXT_DISPLAY,
-                    content: "Nice choice " + getRandomEmoji(),
-                  },
-                ],
-              },
-            });
-          } catch (err) {
-            console.error("Error sending message:", err);
-          }
-        }
-      }
-
       return;
     }
 
