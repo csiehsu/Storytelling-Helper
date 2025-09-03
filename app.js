@@ -12,6 +12,7 @@ import {
 import connectDB from "./database.js";
 import Item from "./models/item.model.js";
 import User from "./models/user.model.js";
+import { validateStartParameters, wrapMessage } from "./utils.js";
 
 // Create an express app
 const app = express();
@@ -63,59 +64,45 @@ app.post(
         const characterName = options.find(
           (opt) => opt.name === "角色名稱"
         ).value;
+        const str = options.find((opt) => opt.name === "力量值").value;
+        const spd = options.find((opt) => opt.name === "速度值").value;
+        const dex = options.find((opt) => opt.name === "靈巧值").value;
+        const inputStr = `輸入內容：${characterName} 力量${str} 速度${spd} 靈巧${dex}\n`;
 
+        // 呼叫驗證函式
+        const validationError = validateStartParameters(
+          characterName,
+          str,
+          spd,
+          dex
+        );
+        if (validationError) {
+          return res.send(wrapMessage(4, inputStr + validationError, 64));
+        }
         try {
           // 檢查使用者在資料庫中是否已經有角色
           const existingUser = await User.findOne({
             $or: [{ userId: userId }, { characterName: characterName }],
           });
           if (existingUser) {
-            return res.send({
-              type: 4, // 類型 4 代表 CHANNEL_MESSAGE_WITH_SOURCE
-              data: {
-                content: `角色已存在，如需協助請聯絡管理員。`,
-                flags: 64, // 標記為 64 (EPHEMERAL)，讓訊息只有使用者自己看得到
-              },
-            });
+            return res.send(wrapMessage(4, `${inputStr}玩家或角色已存在`, 64));
           }
 
-          // 創建新使用者文件
+          // 建立新使用者
           const newUser = new User({
             userId: userId,
             characterName: characterName,
+            stats: { strength: str, speed: spd, dexterity: dex },
           });
 
           // 將新使用者資料儲存到資料庫
           await newUser.save();
 
-          // 回覆玩家，創建成功
-          return res.send({
-            type: 4,
-            data: {
-              content: `角色 **${characterName}** 建立成功`,
-              flags: 64,
-            },
-          });
+          // 回覆玩家建立成功
+          return res.send(wrapMessage(4, `${inputStr}建立成功`, 64));
         } catch (error) {
           console.error("建立角色時發生錯誤:", error);
-
-          if (error.code === 11000) {
-            return res.send({
-              type: 4,
-              data: {
-                content: "角色已存在，如需協助請聯絡管理員。",
-                flags: 64,
-              },
-            });
-          } else {
-            return res.send({
-              type: 4,
-              data: {
-                content: "發生了未知錯誤，請稍後再試。",
-                flags: 64,
-              },
-            });
-          }
+          return res.send(wrapMessage(4, `發生了未知錯誤，請稍後再試。`, 64));
         }
       }
 
@@ -128,15 +115,9 @@ app.post(
               return `${item.itemId}. ${item.itemName}: ${item.description}`;
             })
             .join("\n");
-          return res.send({
-            type: 4,
-            data: {
-              flags: 64,
-              content: itemList || "No items found.",
-            },
-          });
+          return res.send(wrapMessage(4, itemList || "查無道具", 0));
         } catch (err) {
-          console.error("Error finding items:", err);
+          console.error("搜尋道具時發生錯誤:", err);
         }
       }
 

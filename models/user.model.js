@@ -3,24 +3,22 @@ import mongoose from "mongoose";
 // 定義 stats 的子模式 (schema)
 const statsSchema = new mongoose.Schema(
   {
-    strength: { type: Number, default: 10 },
-    dexterity: { type: Number, default: 10 },
-    hp: { type: Number, default: 100 },
-    mp: { type: Number, default: 50 },
-    level: { type: Number, default: 1 },
-    exp: { type: Number, default: 0 },
+    strength: { type: Number, required: true },
+    speed: { type: Number, required: true },
+    dexterity: { type: Number, required: true },
+    spiritual: { type: Number, default: 10 },
   },
   { _id: false }
 ); // 這裡設定 _id: false 是因為 stats 只是 user 模式的一個子文件，不需要自己的 _id
 
-// 定義 inventory 道具的子模式
-const inventorySchema = new mongoose.Schema(
-  {
-    itemId: { type: String, required: true },
-    quantity: { type: Number, default: 1 },
-  },
-  { _id: false }
-);
+// 在 statsSchema 中定義虛擬屬性
+statsSchema.virtual("maxMp").get(function () {
+  return this.spiritual * 10;
+});
+
+// 輸出 JSON 包含虛擬屬性
+statsSchema.set("toJSON", { virtuals: true });
+statsSchema.set("toObject", { virtuals: true });
 
 // 定義 equipped 裝備的子模式
 const equippedSchema = new mongoose.Schema(
@@ -36,8 +34,24 @@ const equippedSchema = new mongoose.Schema(
   { _id: false }
 );
 
+equippedSchema.virtual("defense").get(function () {
+  // 根據裝備計算防禦力
+});
+
+equippedSchema.set("toJSON", { virtuals: true });
+equippedSchema.set("toObject", { virtuals: true });
+
+// 定義 inventory 道具的子模式
+const inventorySchema = new mongoose.Schema(
+  {
+    itemId: { type: String, required: true },
+    quantity: { type: Number, default: 1 },
+  },
+  { _id: false }
+);
+
 // 定義 crafting 製作的子模式
-const craftingSkillSchema = new mongoose.Schema(
+const skillSchema = new mongoose.Schema(
   {
     skillName: {
       type: String,
@@ -81,6 +95,9 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  maxHp: { type: Number, default: 100 },
+  currentHp: { type: Number, default: 100 },
+  currentMp: { type: Number, default: 100 },
   stats: {
     type: statsSchema,
     default: () => ({}), // 設定預設值以避免創建時出錯
@@ -90,7 +107,7 @@ const userSchema = new mongoose.Schema({
     type: equippedSchema,
     default: () => ({}),
   },
-  craftingSkill: [craftingSkillSchema],
+  skill: [skillSchema],
   craftingRecipe: [craftingRecipeSchema],
   createdAt: {
     type: Date,

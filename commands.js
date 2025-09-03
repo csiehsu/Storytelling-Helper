@@ -15,12 +15,30 @@ const ITEMS_COMMAND = {
 
 const START_COMMAND = {
   name: "start",
-  description: "建立角色開始遊戲",
+  description: "建立角色開始遊戲，能力值總和須為30",
   options: [
     {
       name: "角色名稱",
-      description: "請輸入你的角色名稱",
+      description: "請輸入角色名稱，20字以內",
       type: 3, // string
+      required: true,
+    },
+    {
+      name: "力量值",
+      description: "影響負重與攻擊力，1 以上",
+      type: 4, // integer
+      required: true,
+    },
+    {
+      name: "速度值",
+      description: "影響迴避、命中與行動順序，1 以上",
+      type: 4,
+      required: true,
+    },
+    {
+      name: "靈巧值",
+      description: "影響製作與採集速度，1 以上",
+      type: 4,
       required: true,
     },
   ],
