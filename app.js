@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, Events, GatewayIntentBits } from "discord.js";
+import { Client, Events, GatewayIntentBits, EmbedBuilder } from "discord.js";
 import express from "express";
 import {
   ButtonStyleTypes,
@@ -12,7 +12,12 @@ import {
 import connectDB from "./database.js";
 import Item from "./models/item.model.js";
 import User from "./models/user.model.js";
-import { validateStartParameters, wrapMessage } from "./utils.js";
+import {
+  validateStartParameters,
+  isLegalStr,
+  wrapMessage,
+  translateAttributes,
+} from "./utils.js";
 
 // Create an express app
 const app = express();
@@ -116,6 +121,59 @@ app.post(
             })
             .join("\n");
           return res.send(wrapMessage(4, itemList || "查無道具", 0));
+        } catch (err) {
+          console.error("搜尋道具時發生錯誤:", err);
+        }
+      }
+
+      // "item_detail" command
+      if (name === "item_detail") {
+        const options = req.body.data.options;
+        const itemName = options.find((opt) => opt.name === "道具名稱").value;
+        const inputStr = `輸入內容：${itemName}\n`;
+        if (!isLegalStr(itemName)) {
+          return res.send(wrapMessage(4, inputStr + "名稱不可包含符號", 64));
+        }
+        try {
+          // 從資料庫查詢道具資訊
+          const itemDocument = await Item.findOne({ itemName: itemName });
+
+          if (!itemDocument) {
+            return res.send(wrapMessage(4, `${inputStr}查無此道具`, 64));
+          }
+          // 將 Mongoose 文件轉換為純 JavaScript 物件
+          const item = itemDocument.toObject();
+          // 組合道具資訊
+          const attributesFields = Object.entries(item.attributes).map(
+            ([key, value]) => {
+              // 將屬性名稱的 key 轉成中文
+              const name = translateAttributes(key);
+
+              // 回傳一個符合格式的物件
+              return {
+                name: name,
+                value: String(value), // 值必須是字串
+                inline: true,
+              };
+            }
+          );
+
+          // 使用 Discord.js 的 EmbedBuilder 來建立嵌入式訊息
+          const itemEmbed = new EmbedBuilder()
+            .setColor("#0099ff")
+            .setTitle(itemName)
+            .setDescription(item.description || "無描述")
+            .setThumbnail(
+              item.imageUrl || "https://example.com/default-item-image.png"
+            ) // 在標題旁顯示小圖
+            .addFields(
+              // 新增欄位來顯示道具屬性
+              { name: "類型", value: item.type || "未知", inline: true },
+              ...attributesFields
+            );
+
+          // 回覆包含嵌入式訊息的訊息
+          return res.send(wrapMessage(4, "", 64, [itemEmbed]));
         } catch (err) {
           console.error("搜尋道具時發生錯誤:", err);
         }

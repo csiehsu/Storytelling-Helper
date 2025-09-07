@@ -38,11 +38,7 @@ export async function InstallGlobalCommands(appId, commands) {
 }
 
 export function validateStartParameters(name, str, spd, dex) {
-  // 定義允許的字元：中文字、英文字母、數字、.、_、-、空格
-  // 這裡使用 `\s` 代表所有空白字元，包括空格
-  const allowedRegex = /^[\u4e00-\u9fa5a-zA-Z0-9.\s_-]+$/;
-  // 檢查角色名稱是否符合正規表達式
-  if (!allowedRegex.test(name)) {
+  if (isLegalStr(name)) {
     return "角色名稱只能包含中文、英文、數字、空格和._-";
   }
   if (name.length > 20) {
@@ -64,12 +60,43 @@ export function validateStartParameters(name, str, spd, dex) {
   }
 }
 
-export function wrapMessage(type, content, flag) {
+// 檢查字串是否不包含特殊符號
+export function isLegalStr(str) {
+  // 定義允許的字元：中文字、英文字母、數字、.、_、-、空格
+  // 這裡使用 `\s` 代表所有空白字元，包括空格
+  const allowedRegex = /^[\u4e00-\u9fa5a-zA-Z0-9.\s_-]+$/;
+  if (allowedRegex.test(str)) return true;
+  return false;
+}
+
+export function wrapMessage(type, content, flag, embeds = []) {
   return {
     type: type, // 類型 4 代表 CHANNEL_MESSAGE_WITH_SOURCE
     data: {
       content: content,
       flags: flag, // 標記為 64 (EPHEMERAL)，讓訊息只有使用者自己看得到, 0 = DEFAULT
+      embeds: embeds, // 可選的嵌入式訊息
     },
   };
+}
+
+export function translateAttributes(key) {
+  let name = key;
+  switch (key) {
+    case "attack":
+      name = "攻擊力";
+      break;
+    case "defense":
+      name = "防禦力";
+      break;
+    case "weight":
+      name = "重量";
+      break;
+    case "durability":
+      name = "耐久度";
+      break;
+    default:
+      break;
+  }
+  return name;
 }
