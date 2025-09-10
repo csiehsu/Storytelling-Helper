@@ -38,7 +38,7 @@ export async function InstallGlobalCommands(appId, commands) {
 }
 
 export function validateStartParameters(name, str, spd, dex) {
-  if (isLegalStr(name)) {
+  if (!isLegalStr(name)) {
     return "角色名稱只能包含中文、英文、數字、空格和._-";
   }
   if (name.length > 20) {

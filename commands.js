@@ -5,8 +5,8 @@ import { InstallGlobalCommands } from "./utils.js";
 // integration_types: where the command is registered. 0 = guild(server), 1 = DM
 // contexts: where the command is shown/usable. 0 = server text channel, 1 = DM, 2 = server threads
 // option types: 3 = string, 4 = integer, 5 = boolean, 6 = user, 7 = channel, 8 = role, 9 = mentionable, 10 = number
-const ITEMS_COMMAND = {
-  name: "items",
+const INVENTORY_COMMAND = {
+  name: "inventory",
   description: "查看道具欄",
   type: 1,
   integration_types: [0],
@@ -71,7 +71,7 @@ const LIKABILITY_COMMAND = {
 };
 
 const ALL_COMMANDS = [
-  ITEMS_COMMAND,
+  INVENTORY_COMMAND,
   ITEM_DETAIL_COMMAND,
   START_COMMAND,
   CRAFTING_COMMAND,

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { Schema } from "mongoose";
 
 // 定義 stats 的子模式 (schema)
 const statsSchema = new mongoose.Schema(
@@ -23,13 +24,14 @@ statsSchema.set("toObject", { virtuals: true });
 // 定義 equipped 裝備的子模式
 const equippedSchema = new mongoose.Schema(
   {
-    weapon: { type: String },
-    headArmor: { type: String },
-    bodyArmor: { type: String },
-    legArmor: { type: String },
-    footArmor: { type: String },
-    handArmor: { type: String },
-    accessory: { type: String },
+    // 引用 Item 模型的 _id
+    weapon: { type: Schema.Types.ObjectId, ref: "Item" },
+    headArmor: { type: Schema.Types.ObjectId, ref: "Item" },
+    bodyArmor: { type: Schema.Types.ObjectId, ref: "Item" },
+    legArmor: { type: Schema.Types.ObjectId, ref: "Item" },
+    footArmor: { type: Schema.Types.ObjectId, ref: "Item" },
+    handArmor: { type: Schema.Types.ObjectId, ref: "Item" },
+    accessory: { type: Schema.Types.ObjectId, ref: "Item" },
   },
   { _id: false }
 );
@@ -40,15 +42,6 @@ equippedSchema.virtual("defense").get(function () {
 
 equippedSchema.set("toJSON", { virtuals: true });
 equippedSchema.set("toObject", { virtuals: true });
-
-// 定義 inventory 道具的子模式
-const inventorySchema = new mongoose.Schema(
-  {
-    itemId: { type: String, required: true },
-    quantity: { type: Number, default: 1 },
-  },
-  { _id: false }
-);
 
 // 定義 crafting 製作的子模式
 const skillSchema = new mongoose.Schema(
@@ -73,7 +66,7 @@ const skillSchema = new mongoose.Schema(
 // 定義 crafting 配方的子模式
 const craftingRecipeSchema = new mongoose.Schema(
   {
-    recipeId: { type: String, required: true },
+    recipe: { type: Schema.Types.ObjectId, ref: "Recipe", required: true },
   },
   { _id: false }
 );
@@ -102,7 +95,6 @@ const userSchema = new mongoose.Schema({
     type: statsSchema,
     default: () => ({}), // 設定預設值以避免創建時出錯
   },
-  inventory: [inventorySchema], // 陣列，包含多個 inventorySchema 文件
   equipped: {
     type: equippedSchema,
     default: () => ({}),
