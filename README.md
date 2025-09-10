@@ -35,7 +35,8 @@ node app.js
 
 # 指令一覽
 
-| Command  | Description       |
-| -------- | ----------------- |
-| `/items` | Check all items.  |
-| `/start` | Create character. |
+| Command        | Description       |
+| -------------- | ----------------- |
+| `/start`       | Create character. |
+| `/inventory`   | Check inventory.  |
+| `/item_detail` | Create item.      |
