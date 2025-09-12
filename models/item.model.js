@@ -12,7 +12,7 @@ const attributesSchema = new mongoose.Schema(
 );
 
 const itemSchema = new mongoose.Schema({
-  itemId: { type: String, required: true },
+  itemId: { type: String, required: true, unique: true },
   name: {
     type: String,
     required: true,

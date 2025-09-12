@@ -60,8 +60,13 @@ const START_COMMAND = {
   ],
 };
 
-const CRAFTING_COMMAND = {
-  name: "crafting",
+const GATHER_COMMAND = {
+  name: "gather",
+  description: "採集物品",
+};
+
+const CRAFT_COMMAND = {
+  name: "craft",
   description: "選擇製作配方",
 };
 
@@ -74,7 +79,8 @@ const ALL_COMMANDS = [
   INVENTORY_COMMAND,
   ITEM_DETAIL_COMMAND,
   START_COMMAND,
-  CRAFTING_COMMAND,
+  GATHER_COMMAND,
+  CRAFT_COMMAND,
   LIKABILITY_COMMAND,
 ];
 

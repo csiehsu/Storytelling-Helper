@@ -1,5 +1,12 @@
 import "dotenv/config";
-import { Client, Events, GatewayIntentBits, EmbedBuilder } from "discord.js";
+import {
+  Client,
+  Events,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+} from "discord.js";
 import express from "express";
 import {
   ButtonStyleTypes,
@@ -13,6 +20,8 @@ import connectDB from "./database.js";
 import Item from "./models/item.model.js";
 import User from "./models/user.model.js";
 import Inventory from "./models/inventory.model.js";
+import Location from "./models/location.model.js";
+import gatherHandler from "./handlers/gatherHandler.js";
 import {
   validateStartParameters,
   isLegalStr,
@@ -49,17 +58,12 @@ app.post(
     const { id, type, data } = req.body;
     const userId = req.body.member.user.id;
 
-    /**
-     * Handle verification requests
-     */
+    // PING request
     if (type === InteractionType.PING) {
       return res.send({ type: InteractionResponseType.PONG });
     }
 
-    /**
-     * Handle slash command requests
-     * See https://discord.com/developers/docs/interactions/application-commands#slash-commands
-     */
+    // 普通指令
     if (type === InteractionType.APPLICATION_COMMAND) {
       const { name } = data;
 
@@ -171,7 +175,7 @@ app.post(
         }
         try {
           // 從資料庫查詢道具資訊
-          const itemDocument = await Item.findOne({ itemName: itemName });
+          const itemDocument = await Item.findOne({ name: itemName });
 
           if (!itemDocument) {
             return res.send(wrapMessage(4, `${inputStr}查無此道具`, 64));
@@ -182,11 +186,11 @@ app.post(
           const attributesFields = Object.entries(item.attributes).map(
             ([key, value]) => {
               // 將屬性名稱的 key 轉成中文
-              const name = translateAttributes(key);
+              const translatedName = translateAttributes(key);
 
               // 回傳一個符合格式的物件
               return {
-                name: name,
+                name: translatedName,
                 value: String(value), // 值必須是字串
                 inline: true,
               };
@@ -214,15 +218,75 @@ app.post(
         }
       }
 
-      // "crafting" command
-      if (name === "crafting") {
+      // gather command
+      if (name === "gather") {
+        try {
+          const channelId = req.body.channel_id;
+          const location = await Location.findOne({ channelId }).lean();
+          if (
+            !location ||
+            !location.gatherables ||
+            location.gatherables.length === 0
+          ) {
+            return res.send(wrapMessage(4, "無法在此採集", 64));
+          }
+
+          const items = await Item.find({
+            itemId: { $in: location.gatherables.map((g) => g.itemId) },
+          }).lean();
+          if (items.length === 0) {
+            return res.send(wrapMessage(4, "未找到可採集的物品", 64));
+          }
+
+          // 建立下拉式選單的選項
+          const options = items.map((item) => ({
+            label: item.name,
+            value: item.itemId,
+            description: `機率：${
+              location.gatherables.find((g) => g.itemId === item.itemId).chance
+            }%`,
+          }));
+          const row = new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId("gather_select")
+              .setPlaceholder("未選擇")
+              .addOptions(options)
+          );
+
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: "請選擇要採集的資源：",
+              components: [row.toJSON()],
+            },
+          });
+        } catch (err) {
+          console.error("採集資源時發生錯誤:", err);
+        }
+      }
+
+      // "craft" command
+      if (name === "craft") {
       }
 
       console.error(`unknown command: ${name}`);
       return res.status(400).json({ error: "unknown command" });
     }
 
+    // 按鈕或下拉選單等元件互動
     if (type === InteractionType.MESSAGE_COMPONENT) {
+      // 當初在 Components 裡面設定的 custom_id
+      const customId = data.custom_id;
+      if (customId === "gather_select") {
+        // 當初 options 裡面的 value
+        const itemId = data.values[0];
+        await gatherHandler(req.body, itemId, res);
+      }
+      return;
+    }
+
+    // 動態指令（自動完成選項）
+    if (type === InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE) {
       return;
     }
 
