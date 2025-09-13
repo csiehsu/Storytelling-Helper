@@ -1,29 +1,30 @@
 // 定義製作一個配方會產出什麼
 import mongoose from "mongoose";
-import { Schema } from "mongoose";
 
-const recipeSchema = new Schema({
-  // outputItem 的 type 是 ObjectId，這會連結到 Item 模型的 _id
-  outputItem: { type: Schema.Types.ObjectId, ref: "Item", required: true },
-  outputQuantity: { type: Number, required: true },
+// 用來定義材料的子 Schema
+const requiredItemSchema = new mongoose.Schema(
+  {
+    type: { type: String, required: true },
+    quantity: { type: Number, required: true },
+  },
+  { _id: false }
+);
 
-  // materials 是陣列，表示一個配方可以有多個素材。只要符合 type 類型的道具都可以是素材
-  materials: [
-    {
-      type: { type: String, required: true },
-      quantity: { type: Number, required: true },
-    },
-  ],
+const outputItemSchema = new mongoose.Schema(
+  {
+    type: { type: String, required: true },
+    quantity: { type: Number, required: true, default: 1 },
+  },
+  { _id: false }
+);
 
-  // tools 也是陣列，表示一個配方可以有多個工具。只要符合 type 類型的道具都可以是工具
-  tools: [
-    {
-      type: { type: String, required: true },
-    },
-  ],
+const recipeSchema = new mongoose.Schema({
+  recipeId: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  outputItem: { type: outputItemSchema, required: true },
+  requiredItems: { type: [requiredItemSchema], default: [] },
 });
 
-// 建立並匯出模型
 const Recipe = mongoose.model("Recipe", recipeSchema);
 
 export default Recipe;

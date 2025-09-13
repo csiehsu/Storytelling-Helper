@@ -46,7 +46,7 @@ equippedSchema.set("toObject", { virtuals: true });
 // 定義 crafting 製作的子模式
 const skillSchema = new mongoose.Schema(
   {
-    skillName: {
+    skillId: {
       type: String,
       required: true,
       unique: true, // 確保每個技能名稱都是唯一的
@@ -59,14 +59,6 @@ const skillSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-  },
-  { _id: false }
-);
-
-// 定義 crafting 配方的子模式
-const craftingRecipeSchema = new mongoose.Schema(
-  {
-    recipe: { type: Schema.Types.ObjectId, ref: "Recipe", required: true },
   },
   { _id: false }
 );
@@ -100,7 +92,10 @@ const userSchema = new mongoose.Schema({
     default: () => ({}),
   },
   skill: [skillSchema],
-  craftingRecipe: [craftingRecipeSchema],
+  learnedRecipes: {
+    type: [String], // 儲存 recipeId 的陣列
+    default: [],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

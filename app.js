@@ -107,8 +107,11 @@ app.post(
           await newUser.save();
 
           // 建立使用者的道具欄
-          const newInventory = new Inventory({ userId: userId, items: [] });
-          await newInventory.save();
+          const existingInventory = await Inventory.findOne({ userId: userId });
+          if (!existingInventory) {
+            const newInventory = new Inventory({ userId: userId, items: [] });
+            await newInventory.save();
+          }
 
           // 回覆玩家建立成功
           return res.send(wrapMessage(4, `${inputStr}建立成功`, 64));

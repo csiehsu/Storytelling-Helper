@@ -40,3 +40,4 @@ node app.js
 | `/start`       | Create character. |
 | `/inventory`   | Check inventory.  |
 | `/item_detail` | Create item.      |
+| `/gather`      | Gather resources. |
