@@ -39,5 +39,6 @@ node app.js
 | -------------- | ----------------- |
 | `/start`       | Create character. |
 | `/inventory`   | Check inventory.  |
-| `/item_detail` | Create item.      |
+| `/item_detail` | Check item.       |
 | `/gather`      | Gather resources. |
+| `/craft`       | Craft item        |

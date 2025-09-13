@@ -1,7 +1,7 @@
 import Item from "../models/item.model.js";
 import Inventory from "../models/inventory.model.js";
 
-async function gatherHandler(interaction, itemId, res) {
+async function handleGatherSelect(interaction, itemId, res) {
   // 步驟 1: 在 3 秒內立即回覆一個延遲訊息，避免超時。另外一個作用是等等才能編輯這個訊息。
   res.json({
     type: 6, // 回覆類型 6: 延遲更新
@@ -75,4 +75,4 @@ async function gatherHandler(interaction, itemId, res) {
   }
 }
 
-export default gatherHandler;
+export default handleGatherSelect;

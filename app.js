@@ -21,7 +21,8 @@ import Item from "./models/item.model.js";
 import User from "./models/user.model.js";
 import Inventory from "./models/inventory.model.js";
 import Location from "./models/location.model.js";
-import gatherHandler from "./handlers/gatherHandler.js";
+import handleGatherSelect from "./handlers/gatherHandler.js";
+import handleCraftCommand from "./handlers/craftHandler.js";
 import {
   validateStartParameters,
   isLegalStr,
@@ -103,6 +104,8 @@ app.post(
             userId: userId,
             characterName: characterName,
             stats: { strength: str, speed: spd, dexterity: dex },
+            learnedRecipes: ["recipe001"],
+            skill: [{ skillId: "skill001" }],
           });
           await newUser.save();
 
@@ -270,6 +273,8 @@ app.post(
 
       // "craft" command
       if (name === "craft") {
+        await handleCraftCommand(req.body, res);
+        return;
       }
 
       console.error(`unknown command: ${name}`);
@@ -283,9 +288,9 @@ app.post(
       if (customId === "gather_select") {
         // 當初 options 裡面的 value
         const itemId = data.values[0];
-        await gatherHandler(req.body, itemId, res);
+        await handleGatherSelect(req.body, itemId, res);
+        return;
       }
-      return;
     }
 
     // 動態指令（自動完成選項）
