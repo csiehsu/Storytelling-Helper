@@ -21,7 +21,7 @@ import Item from "./models/item.model.js";
 import User from "./models/user.model.js";
 import Inventory from "./models/inventory.model.js";
 import Location from "./models/location.model.js";
-import handleGatherSelect from "./handlers/gatherHandler.js";
+import handleGatherSelect from "./handlers/gatherSelectHandler.js";
 import handleCraftCommand from "./handlers/craftHandler.js";
 import {
   validateStartParameters,
