@@ -23,6 +23,10 @@ import Inventory from "./models/inventory.model.js";
 import Location from "./models/location.model.js";
 import handleGatherSelect from "./handlers/gatherSelectHandler.js";
 import handleCraftCommand from "./handlers/craftHandler.js";
+import handleRecipeSelect from "./handlers/craftSelectHandler.js";
+import handleCraftUpdate from "./handlers/craftUpdateHandler.js";
+import handleCraftSubmit from "./handlers/craftSubmitHandler.js";
+import handleCraftOutput from "./handlers/craftOutputHandler.js";
 import {
   validateStartParameters,
   isLegalStr,
@@ -285,10 +289,28 @@ app.post(
     if (type === InteractionType.MESSAGE_COMPONENT) {
       // 當初在 Components 裡面設定的 custom_id
       const customId = data.custom_id;
+      console.log(customId);
+
       if (customId === "gather_select") {
         // 當初 options 裡面的 value
         const itemId = data.values[0];
         await handleGatherSelect(req.body, itemId, res);
+        return;
+      }
+      if (customId === "craft_select") {
+        await handleRecipeSelect(req.body, res);
+        return;
+      }
+      if (customId.startsWith("craft_material_select")) {
+        await handleCraftUpdate(req.body, res);
+        return;
+      }
+      if (customId.startsWith("craft_quantity_select")) {
+        await handleCraftSubmit(req.body, res);
+        return;
+      }
+      if (customId.startsWith("craft_submit")) {
+        await handleCraftOutput(req.body, res);
         return;
       }
     }

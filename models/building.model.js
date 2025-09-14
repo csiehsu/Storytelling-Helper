@@ -7,7 +7,7 @@ const buildingSchema = new mongoose.Schema({
   locationId: { type: String, required: true },
   ownerId: { type: String },
   permanent: { type: Boolean, default: false },
-  state: { type: String, required: true },
+  available: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });
 

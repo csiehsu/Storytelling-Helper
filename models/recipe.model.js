@@ -18,11 +18,19 @@ const outputItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const nameSchema = new mongoose.Schema(
+  {
+    ch: { type: String, required: true },
+    en: { type: String, required: true },
+  },
+  { _id: false }
+);
 const recipeSchema = new mongoose.Schema({
   recipeId: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
-  outputItem: { type: outputItemSchema, required: true },
+  name: { type: nameSchema, required: true },
+  outputItems: { type: [outputItemSchema], required: true },
   requiredItems: { type: [requiredItemSchema], default: [] },
+  requiredToolTypes: { type: [String], default: [] },
 });
 
 const Recipe = mongoose.model("Recipe", recipeSchema);

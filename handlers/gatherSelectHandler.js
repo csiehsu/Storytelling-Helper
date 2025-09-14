@@ -6,6 +6,7 @@ async function handleGatherSelect(interaction, itemId, res) {
   res.json({
     type: 6, // 回覆類型 6: 延遲更新
   });
+  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
 
   try {
     const item = await Item.findOne({ itemId }).lean();
@@ -13,7 +14,6 @@ async function handleGatherSelect(interaction, itemId, res) {
     const inventory = await Inventory.findOne({
       userId: interaction.member.user.id,
     });
-    const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
     if (!item || !inventory) {
       // 這裡不直接回覆 res.json，因為已經延遲了
       await fetch(webhookUrl, {

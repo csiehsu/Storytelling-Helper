@@ -25,7 +25,7 @@ async function handleCraftCommand(interaction, res) {
 
     // 建立下拉式選單和 ActionRow
     const selectOptions = learnedRecipeDetails.map((recipe) => ({
-      label: recipe.name,
+      label: recipe.name.ch,
       value: recipe.recipeId,
     }));
 
