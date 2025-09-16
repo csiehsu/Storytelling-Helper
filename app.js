@@ -27,6 +27,11 @@ import handleRecipeSelect from "./handlers/craftSelectHandler.js";
 import handleCraftUpdate from "./handlers/craftUpdateHandler.js";
 import handleCraftSubmit from "./handlers/craftSubmitHandler.js";
 import handleCraftOutput from "./handlers/craftOutputHandler.js";
+import handleUseCommand from "./handlers/useHandler.js";
+import {
+  handleUseItemSelect,
+  handleUseQuantitySelect,
+} from "./handlers/useSelectHandler.js";
 import {
   validateStartParameters,
   isLegalStr,
@@ -281,6 +286,11 @@ app.post(
         return;
       }
 
+      if (name === "use") {
+        await handleUseCommand(req.body, res);
+        return;
+      }
+
       console.error(`unknown command: ${name}`);
       return res.status(400).json({ error: "unknown command" });
     }
@@ -289,7 +299,6 @@ app.post(
     if (type === InteractionType.MESSAGE_COMPONENT) {
       // 當初在 Components 裡面設定的 custom_id
       const customId = data.custom_id;
-      console.log(customId);
 
       if (customId === "gather_select") {
         // 當初 options 裡面的 value
@@ -311,6 +320,14 @@ app.post(
       }
       if (customId.startsWith("craft_submit")) {
         await handleCraftOutput(req.body, res);
+        return;
+      }
+      if (customId.startsWith("use_item_select")) {
+        await handleUseItemSelect(req.body, res);
+        return;
+      }
+      if (customId.startsWith("use_quantity_select")) {
+        await handleUseQuantitySelect(req.body, res);
         return;
       }
     }

@@ -70,6 +70,11 @@ const CRAFT_COMMAND = {
   description: "選擇製作配方",
 };
 
+const USE_COMMAND = {
+  name: "use",
+  description: "使用道具",
+};
+
 const LIKABILITY_COMMAND = {
   name: "likability",
   description: "查看好感度",
@@ -81,6 +86,7 @@ const ALL_COMMANDS = [
   START_COMMAND,
   GATHER_COMMAND,
   CRAFT_COMMAND,
+  USE_COMMAND,
   LIKABILITY_COMMAND,
 ];
 

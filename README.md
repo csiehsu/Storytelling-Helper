@@ -42,3 +42,4 @@ node app.js
 | `/item_detail` | Check item.       |
 | `/gather`      | Gather resources. |
 | `/craft`       | Craft item        |
+| `/use`         | Use item.         |

@@ -4,6 +4,7 @@ import { Schema } from "mongoose";
 // 定義 stats 的子模式 (schema)
 const statsSchema = new mongoose.Schema(
   {
+    maxHp: { type: Number, default: 100 },
     strength: { type: Number, required: true },
     speed: { type: Number, required: true },
     dexterity: { type: Number, required: true },
@@ -80,7 +81,6 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  maxHp: { type: Number, default: 100 },
   currentHp: { type: Number, default: 100 },
   currentMp: { type: Number, default: 100 },
   stats: {
