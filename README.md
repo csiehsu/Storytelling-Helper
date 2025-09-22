@@ -33,13 +33,19 @@ node app.js
 
 如果無法 Save 記得先 node app.js
 
-# 指令一覽
+# 玩家指令一覽
 
-| Command        | Description       |
-| -------------- | ----------------- |
-| `/start`       | Create character. |
-| `/inventory`   | Check inventory.  |
-| `/item_detail` | Check item.       |
-| `/gather`      | Gather resources. |
-| `/craft`       | Craft item        |
-| `/use`         | Use item.         |
+| Command        | Description |
+| -------------- | ----------- |
+| `/start`       | 創角        |
+| `/inventory`   | 查看道具欄  |
+| `/item_detail` | 查看道具    |
+| `/gather`      | 採集資源    |
+| `/craft`       | 製造物品    |
+| `/use`         | 使用物品    |
+
+# GM 指令一覽
+
+| Command | Description         |
+| ------- | ------------------- |
+| `/say`  | 主動顯示 NPC 或道具 |
