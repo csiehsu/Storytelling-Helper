@@ -45,7 +45,7 @@ equippedSchema.set("toJSON", { virtuals: true });
 equippedSchema.set("toObject", { virtuals: true });
 
 // 定義 crafting 製作的子模式
-const skillSchema = new mongoose.Schema(
+const skillsSchema = new mongoose.Schema(
   {
     skillId: {
       type: String,
@@ -91,7 +91,7 @@ const userSchema = new mongoose.Schema({
     type: equippedSchema,
     default: () => ({}),
   },
-  skill: [skillSchema],
+  skills: [skillsSchema],
   learnedRecipes: {
     type: [String], // 儲存 recipeId 的陣列
     default: [],

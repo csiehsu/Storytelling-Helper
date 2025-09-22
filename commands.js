@@ -75,6 +75,34 @@ const USE_COMMAND = {
   description: "使用道具",
 };
 
+const SAY_COMMAND = {
+  name: "say",
+  description: "讓系統主動說話",
+  type: 1, // 聊天指令
+  default_member_permissions: 0, // 這裡設為 "0" 或不填，表示預設無人可見
+  permissions: [
+    {
+      id: "1419547010884829184", // 你要指定的目標身分組 ID
+      type: 1, // 1 表示身分組
+      permission: true, // 設為 true 允許該身分組
+    },
+  ],
+  options: [
+    {
+      name: "類型",
+      description: "0: 戰鬥遭遇, 1: 發現道具, 2: 其他純文字",
+      type: 4,
+      required: true,
+    },
+    {
+      name: "顯示資訊",
+      description: "輸入敵人名稱或道具名稱或其他純文字內容",
+      type: 3,
+      required: true,
+    },
+  ],
+};
+
 const LIKABILITY_COMMAND = {
   name: "likability",
   description: "查看好感度",
@@ -87,6 +115,7 @@ const ALL_COMMANDS = [
   GATHER_COMMAND,
   CRAFT_COMMAND,
   USE_COMMAND,
+  SAY_COMMAND,
   LIKABILITY_COMMAND,
 ];
 

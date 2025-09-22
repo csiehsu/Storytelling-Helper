@@ -32,6 +32,7 @@ import {
   handleUseItemSelect,
   handleUseQuantitySelect,
 } from "./handlers/useSelectHandler.js";
+import handleSayCommand from "./handlers/sayHandler.js";
 import {
   validateStartParameters,
   isLegalStr,
@@ -288,6 +289,11 @@ app.post(
 
       if (name === "use") {
         await handleUseCommand(req.body, res);
+        return;
+      }
+
+      if (name === "say") {
+        await handleSayCommand(req.body, res);
         return;
       }
 
