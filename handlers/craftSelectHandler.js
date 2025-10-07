@@ -19,6 +19,7 @@ async function handleRecipeSelect(interaction, res) {
   // 在 3 秒內立即回覆一個延遲訊息，避免超時。另外一個作用是等等才能編輯這個訊息。
   res.json({
     type: 6, // 回覆類型 6: 延遲更新
+    content: "正在處理請求...",
   });
 
   const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;

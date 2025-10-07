@@ -7,9 +7,26 @@ import {
   ButtonStyle,
 } from "discord.js";
 
+async function updateOriginalMessage(webhookBaseUrl, text, components = []) {
+  const webhookUrl = `${webhookBaseUrl}/messages/@original`;
+  await fetch(webhookUrl, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content: text,
+      components: components, // 移除選單
+    }),
+  });
+  return;
+}
+
 async function handleSayCommand(interaction, res) {
+  res.json({
+    type: 5, // Deferred Message Update
+  });
   try {
     const options = interaction.data.options;
+    const webhookBaseUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}`;
     // 0: 戰鬥遭遇, 1: 發現道具, 2: 其他純文字
     const messageType = Number(
       options.find((opt) => opt.name === "類型").value
@@ -18,26 +35,14 @@ async function handleSayCommand(interaction, res) {
     const messageTitles = ["遭到攻擊", "發現道具", ""];
     let imageUrl;
     let embedFields;
-    let actionRow;
+    let components;
 
     if (messageType === 2) {
-      return res.json({
-        type: 4,
-        data: {
-          content: messageInfo,
-          flags: 64,
-        },
-      });
+      await updateOriginalMessage(webhookBaseUrl, messageInfo);
     } else if (messageType === 0) {
       const enemy = await NPC.findOne({ name: messageInfo });
       if (!enemy) {
-        return res.json({
-          type: 4,
-          data: {
-            content: "查無此敵人",
-            flags: 64,
-          },
-        });
+        await updateOriginalMessage(webhookBaseUrl, "查無此敵人");
       }
       imageUrl =
         enemy.imageUrl ||
@@ -48,27 +53,46 @@ async function handleSayCommand(interaction, res) {
         { name: "", value: enemy.description || "", inline: false },
       ];
 
-      const combatButton = new ButtonBuilder()
+      const fightButton = new ButtonBuilder()
         .setCustomId(`combat_${enemy.npcId}_fight`)
-        .setLabel("戰鬥")
+        .setLabel("攻擊")
         .setStyle(ButtonStyle.Danger);
-
+      const tossButton = new ButtonBuilder()
+        .setCustomId(`combat_${enemy.npcId}_toss`)
+        .setLabel("投擲")
+        .setStyle(ButtonStyle.Success);
+      const strokeButton = new ButtonBuilder()
+        .setCustomId(`combat_${enemy.npcId}_stroke`)
+        .setLabel("撫摸")
+        .setStyle(ButtonStyle.Success);
+      const feedButton = new ButtonBuilder()
+        .setCustomId(`combat_${enemy.npcId}_feed`)
+        .setLabel("餵食")
+        .setStyle(ButtonStyle.Success);
+      const attractButton = new ButtonBuilder()
+        .setCustomId(`combat_${enemy.npcId}_attract`)
+        .setLabel("吸引")
+        .setStyle(ButtonStyle.Success);
       const runButton = new ButtonBuilder()
         .setCustomId(`combat_${enemy.npcId}_run`)
         .setLabel("逃跑")
-        .setStyle(ButtonStyle.Success);
+        .setStyle(ButtonStyle.Secondary);
 
-      actionRow = new ActionRowBuilder().addComponents(combatButton, runButton);
+      const actionRow1 = new ActionRowBuilder().addComponents(
+        tossButton,
+        strokeButton,
+        feedButton,
+        attractButton
+      );
+      const actionRow2 = new ActionRowBuilder().addComponents(
+        fightButton,
+        runButton
+      );
+      components = [actionRow1, actionRow2];
     } else if (messageType === 1) {
       const item = await Item.findOne({ name: messageInfo });
       if (!item) {
-        return res.json({
-          type: 4,
-          data: {
-            content: "查無此道具",
-            flags: 64,
-          },
-        });
+        await updateOriginalMessage(webhookBaseUrl, "查無此道具");
       }
 
       imageUrl = item.imageUrl || "";
@@ -82,15 +106,10 @@ async function handleSayCommand(interaction, res) {
         .setLabel("獲得")
         .setStyle(ButtonStyle.Success);
 
-      actionRow = new ActionRowBuilder().addComponents(getButton);
+      const actionRow = new ActionRowBuilder().addComponents(getButton);
+      components = [actionRow];
     } else {
-      return res.json({
-        type: 4,
-        data: {
-          content: "類型選項錯誤",
-          flags: 64,
-        },
-      });
+      await updateOriginalMessage(webhookBaseUrl, "類型選項錯誤");
     }
 
     const embed = new EmbedBuilder()
@@ -99,22 +118,25 @@ async function handleSayCommand(interaction, res) {
       .setImage(imageUrl)
       .addFields(embedFields);
 
-    return res.json({
-      type: 4,
-      data: {
-        embeds: [embed],
-        components: [actionRow],
+    await fetch(`${webhookBaseUrl}/messages/@original`, {
+      method: "DELETE",
+    });
+    const CHANNEL_ID = interaction.channel_id; // 互動事件中的頻道 ID
+    const apiUrl = `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages`;
+    await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bot ${process.env.DISCORD_TOKEN}`, // 使用 Bot Token 進行授權
       },
+      body: JSON.stringify({
+        embeds: [embed],
+        components: components,
+      }),
     });
   } catch (error) {
     console.error("處理使用指令時發生錯誤:", error);
-    res.json({
-      type: 4,
-      data: {
-        content: "處理使用指令時發生錯誤",
-        flags: 64,
-      },
-    });
+    await updateOriginalMessage(webhookBaseUrl, "處理使用指令時發生錯誤");
   }
 }
 
