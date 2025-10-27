@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { SmellTypes } from "../constants/schemaEnums.js";
 
 const statsSchema = new mongoose.Schema(
   {
@@ -44,6 +45,35 @@ const skillsSchema = new mongoose.Schema(
     exp: {
       type: Number,
       default: 0,
+    },
+  },
+  { _id: false }
+);
+
+const smellSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: SmellTypes,
+      required: true,
+    },
+
+    level: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true,
+    },
+  },
+  { _id: false }
+);
+
+const tasteSchema = new mongoose.Schema(
+  {
+    smells: { type: [smellSchema], default: [] },
+    items: {
+      type: [String], //itemId 陣列
+      default: [],
     },
   },
   { _id: false }
@@ -97,6 +127,9 @@ const npcSchema = new mongoose.Schema({
       },
     },
   ],
+
+  likes: { type: tasteSchema, default: () => ({}) },
+  dislikes: { type: tasteSchema, default: () => ({}) },
 });
 
 const NPC = mongoose.model("NPC", npcSchema);

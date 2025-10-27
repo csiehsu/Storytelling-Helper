@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { SmellTypes } from "../constants/schemaEnums.js";
 
 // 定義 attributes 的子模式
 const combatAttributesSchema = new mongoose.Schema(
@@ -23,6 +24,15 @@ const nutritionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// 定義 smell 的子模式
+const smellSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: SmellTypes, default: "none" },
+    level: { type: Number, default: 0, min: 0, max: 5 },
+  },
+  { _id: false }
+);
+
 const itemSchema = new mongoose.Schema({
   itemId: { type: String, required: true, unique: true },
   name: { type: String, required: true, unique: true },
@@ -31,8 +41,9 @@ const itemSchema = new mongoose.Schema({
   type: { type: String, required: true },
   durability: { type: Number, default: -1 },
   weight: { type: Number, default: 0 },
-  combatAttributes: { type: combatAttributesSchema },
-  nutrition: { type: nutritionSchema },
+  smell: { type: smellSchema, default: () => ({}) },
+  combatAttributes: { type: combatAttributesSchema, default: () => ({}) },
+  nutrition: { type: nutritionSchema, default: () => ({}) },
 });
 
 const Item = mongoose.model("Item", itemSchema);

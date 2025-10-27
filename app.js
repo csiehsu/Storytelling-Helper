@@ -33,6 +33,8 @@ import {
   handleUseQuantitySelect,
 } from "./handlers/useSelectHandler.js";
 import handleSayCommand from "./handlers/sayHandler.js";
+import handleCombatCommand from "./handlers/combatHandler.js";
+import handleTossCommand from "./handlers/interactionHandler.js";
 import {
   validateStartParameters,
   isLegalStr,
@@ -334,6 +336,16 @@ app.post(
       }
       if (customId.startsWith("use_quantity_select")) {
         await handleUseQuantitySelect(req.body, res);
+        return;
+      }
+
+      if (customId.startsWith("combat_")) {
+        await handleCombatCommand(req.body, res);
+        return;
+      }
+
+      if (customId.startsWith("toss_item_")) {
+        await handleTossCommand(req.body, res);
         return;
       }
     }
