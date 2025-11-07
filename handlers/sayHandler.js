@@ -79,10 +79,10 @@ async function handleSayCommand(interaction, res) {
         .setStyle(ButtonStyle.Secondary);
 
       const actionRow1 = new ActionRowBuilder().addComponents(
-        tossButton,
-        strokeButton,
-        feedButton,
-        attractButton
+        tossButton
+        // strokeButton,
+        // feedButton,
+        // attractButton
       );
       const actionRow2 = new ActionRowBuilder().addComponents(
         fightButton,
