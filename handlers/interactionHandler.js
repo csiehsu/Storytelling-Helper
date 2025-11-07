@@ -37,15 +37,26 @@ async function handleTossCommand(interaction, res) {
       await updateOriginalMessage(webhookBaseUrl, "找不到目標敵人");
     }
 
+    const inventory = await Inventory.findOne({ userId });
+    if (!inventory || !inventory.items || inventory.items.length === 0) {
+      await updateOriginalMessage(webhookBaseUrl, "背包是空的");
+    }
+    const itemIndex = inventory.items.findIndex(
+      (invItem) => invItem.itemId === itemId
+    );
+    if (itemIndex === -1 || inventory.items[itemIndex].quantity <= 0) {
+      await updateOriginalMessage(webhookBaseUrl, "背包中沒有這個道具");
+    }
+
     const item = await Item.findOne({ itemId }).lean();
     if (!item) {
-      await updateOriginalMessage(webhookBaseUrl, "找不到道具");
+      await updateOriginalMessage(webhookBaseUrl, "無此道具");
     }
 
     if (!item.smell || item.smell.type === "none" || item.smell.level === 0) {
       await updateOriginalMessage(
         webhookBaseUrl,
-        `${targetNpc.name}被${item.name}嚇了一跳，迅速轉身離開。`
+        `${targetNpc.name}被${item.name}嚇了一跳，迅速轉身離開。從地上撿回了${item.name}`
       );
     }
 
@@ -56,40 +67,53 @@ async function handleTossCommand(interaction, res) {
       }
     });
 
+    if (likeLevel > 0) {
+      // 從背包中移除道具
+      inventory.items[itemIndex].quantity -= 1;
+      if (inventory.items[itemIndex].quantity === 0) {
+        inventory.items.splice(itemIndex, 1);
+      }
+      await inventory.save();
+    }
+
+    const resultStr = `${targetNpc.name}的好感度 + ${likeLevel}。\n失去了 1 個${item.name}`;
     if (likeLevel === 5) {
       await updateOriginalMessage(
         webhookBaseUrl,
-        `${targetNpc.name}衝上去接住了${item.name}，津津有味地品嚐起來，完全失去了戒心。`
+        `${targetNpc.name}衝上去接住了${item.name}，津津有味地品嚐起來，完全失去了戒心。\n${resultStr}。`
       );
     } else if (likeLevel === 4) {
       await updateOriginalMessage(
         webhookBaseUrl,
-        `${targetNpc.name}好奇地走向${item.name}，聞了一聞便品嚐起來，偶爾抬頭警戒著你。`
+        `${targetNpc.name}好奇地走向${item.name}，聞了一聞便品嚐起來，偶爾抬頭警戒著你。\n${resultStr}`
       );
     } else if (likeLevel === 3) {
       await updateOriginalMessage(
         webhookBaseUrl,
-        `${targetNpc.name}的視線在你與${item.name}之間來回，但終究沒有任何行動。`
+        `${targetNpc.name}的視線在你與${item.name}之間來回，但終究沒有任何行動。\n${resultStr}`
       );
     } else if (likeLevel === 2) {
       await updateOriginalMessage(
         webhookBaseUrl,
-        `${targetNpc.name}警戒地看著你猶豫了一下，最後迅速地叼走${item.name}，躲進一旁的草叢裡。`
+        `${targetNpc.name}警戒地看著你猶豫了一下，最後迅速地叼走${item.name}，躲進一旁的草叢裡。\n${resultStr}`
       );
     } else if (likeLevel === 1) {
       await updateOriginalMessage(
         webhookBaseUrl,
-        `${targetNpc.name}先是被${item.name}嚇了一跳，接著迅速地叼走${item.name}，一溜煙就不見了蹤影。`
+        `${targetNpc.name}先是被${item.name}嚇了一跳，接著迅速地叼走${item.name}，一溜煙就不見了蹤影。\n${resultStr}`
       );
     } else {
       await updateOriginalMessage(
         webhookBaseUrl,
-        `${targetNpc.name}被${item.name}嚇了一跳，迅速轉身離開。`
+        `${targetNpc.name}被${item.name}嚇了一跳，迅速轉身離開。從地上撿回了${item.name}`
       );
     }
   } catch (error) {
     console.error("處理使用指令時發生錯誤:", error);
-    await updateOriginalMessage(webhookBaseUrl, "處理使用指令時發生錯誤");
+    await updateOriginalMessage(
+      webhookBaseUrl,
+      `處理使用指令時發生錯誤：${error}`
+    );
   }
 }
 

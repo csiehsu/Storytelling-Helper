@@ -50,13 +50,24 @@ async function handleCombatCommand(interaction, res) {
         return await updateOriginalMessage(webhookBaseUrl, "背包是空的");
       }
 
+      // 將背包中的道具 ID 和數量存入 Map
+      const quantityMap = new Map();
+      inventory.items.forEach((item) => {
+        if (item.quantity > 0) {
+          quantityMap.set(item.itemId, item.quantity);
+        }
+      });
+
+      // 根據道具 ID 從資料庫中查詢道具詳細資訊
       const availableItems = await Item.find({
         itemId: { $in: inventory.items.map((item) => item.itemId) },
       }).lean();
 
+      // 製作選項
       const options = availableItems.map((invItem) => {
+        const quantity = quantityMap.get(invItem.itemId);
         return {
-          label: invItem.name,
+          label: `${invItem.name} (${quantity})`,
           value: invItem.itemId,
         };
       });
