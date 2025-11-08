@@ -157,25 +157,15 @@ const activeNPCSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-
-    // === 戰鬥鎖定 ===
-    // 是否正在被玩家戰鬥中 (避免多個玩家同時發起戰鬥)
-    isEngaged: {
-      type: Boolean,
-      default: false,
-      required: true,
+    actionState: {
+      type: String,
+      enum: ["IDLE", "AGGRESSIVE", "DEFENSIVE", "WORKING", "SLEEPING"],
+      default: "IDLE",
     },
     // 正在戰鬥的玩家 ID
     engagedBy: {
       type: [String],
       default: null,
-    },
-
-    // === 時間戳記與 TTL ===
-    // 最後一次活動時間 (用於定時任務判斷是否需要移動或 despawn)
-    lastActivity: {
-      type: Date,
-      default: Date.now,
     },
   },
   {
@@ -200,11 +190,13 @@ activeNPCSchema.statics.findAvailable = async function (locationId) {
  * 根據模板 ID 創建一個全新的 ActiveNPC 實例
  * @param {string} templateId - 基礎 NPC 模板的 ID (例如 'GOBLIN_GUARD')
  * @param {string} locationId - NPC 誕生的頻道/地圖 ID
+ * @param {string} actionState - NPC 的初始行動狀態
  * @returns {ActiveNPCDocument} - 新創建的活躍 NPC 實例
  */
 activeNPCSchema.statics.createInstance = async function (
   templateId,
-  locationId
+  locationId,
+  actionState = "IDLE"
 ) {
   // 1. 查詢 NPC 模板數據
   const templateData = await NPC.findOne({ npcId: templateId }).lean();
@@ -240,6 +232,7 @@ activeNPCSchema.statics.createInstance = async function (
     // 核心識別
     templateId: templateId,
     locationId: locationId,
+    actionState: actionState,
 
     // 靜態數值複製 (Snapshot)
     name: templateData.name,
