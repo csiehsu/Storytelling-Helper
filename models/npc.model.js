@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
-import { SmellTypes } from "../constants/schemaEnums.js";
+import smellSchema from "./smell.model.js";
 
 const statsSchema = new mongoose.Schema(
   {
     maxHp: { type: Number, required: true },
+    maxMp: { type: Number, required: true },
     strength: { type: Number, required: true },
     speed: { type: Number, required: true },
     dexterity: { type: Number, required: true },
-    spiritual: { type: Number, default: 0 },
+    spiritual: { type: Number, required: true },
     defense: { type: Number, required: true },
   },
   { _id: false }
@@ -28,9 +29,6 @@ const equippedSchema = new mongoose.Schema(
   { _id: false }
 );
 
-equippedSchema.set("toJSON", { virtuals: true });
-equippedSchema.set("toObject", { virtuals: true });
-
 const skillsSchema = new mongoose.Schema(
   {
     skillId: {
@@ -41,28 +39,6 @@ const skillsSchema = new mongoose.Schema(
     level: {
       type: Number,
       default: 1,
-    },
-    exp: {
-      type: Number,
-      default: 0,
-    },
-  },
-  { _id: false }
-);
-
-const smellSchema = new mongoose.Schema(
-  {
-    type: {
-      type: String,
-      enum: SmellTypes,
-      required: true,
-    },
-
-    level: {
-      type: Number,
-      min: 1,
-      max: 5,
-      required: true,
     },
   },
   { _id: false }
@@ -101,18 +77,12 @@ const npcSchema = new mongoose.Schema({
   // 角色類型與狀態
   type: {
     type: String,
-    enum: ["NPC", "野獸"],
+    enum: ["NPC", "MONSTER"],
     required: true,
   },
-  status: {
-    type: String, // 戰鬥狀態或非戰鬥狀態
-    enum: ["idle", "hostile", "friendly", "dead"],
-    default: "idle",
-  },
 
-  hp: { type: Number, required: true },
   stats: { type: statsSchema, required: true },
-  equipped: { type: equippedSchema },
+  equipped: { type: equippedSchema, default: () => ({}) },
   skills: [skillsSchema],
 
   drops: [
@@ -127,6 +97,11 @@ const npcSchema = new mongoose.Schema({
       },
     },
   ],
+
+  smells: {
+    type: [smellSchema],
+    default: [{ type: "NONE", level: 0 }],
+  },
 
   likes: { type: tasteSchema, default: () => ({}) },
   dislikes: { type: tasteSchema, default: () => ({}) },
