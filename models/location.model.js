@@ -10,6 +10,7 @@ const gatherableItemSchema = new mongoose.Schema(
 
 const locationSchema = new mongoose.Schema({
   channelId: { type: String, required: true, unique: true }, // 綁定到 Discord 的頻道 ID
+  locationId: { type: String, required: true, unique: true }, // 地點的唯一標識符
   name: { type: String, required: true },
   description: { type: String },
   gatherables: {

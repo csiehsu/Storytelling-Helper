@@ -28,6 +28,7 @@ import handleCraftUpdate from "./handlers/craftUpdateHandler.js";
 import handleCraftSubmit from "./handlers/craftSubmitHandler.js";
 import handleCraftOutput from "./handlers/craftOutputHandler.js";
 import handleUseCommand from "./handlers/useHandler.js";
+import handleMoveCommand from "./handlers/moveHandler.js";
 import {
   handleUseItemSelect,
   handleUseQuantitySelect,
@@ -291,6 +292,11 @@ app.post(
 
       if (name === "use") {
         await handleUseCommand(req.body, res);
+        return;
+      }
+
+      if (name === "move") {
+        await handleMoveCommand(req.body, res);
         return;
       }
 

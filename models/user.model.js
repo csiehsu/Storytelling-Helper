@@ -96,6 +96,18 @@ const userSchema = new mongoose.Schema({
     type: [String], // 儲存 recipeId 的陣列
     default: [],
   },
+  // 玩家當前的位置 ID
+  locationId: {
+    type: String,
+    default: "PIONEER_CABIN",
+    ref: "Location", // 引用 Location Model
+  },
+
+  // *** 關鍵改變：Known Locations (已知地點) ***
+  knownLocations: {
+    type: [String], // 儲存玩家已經探索過的地點的 _id/slug
+    default: ["PIONEER_CABIN", "VERDANT_BAY_PORT"],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

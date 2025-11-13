@@ -35,14 +35,15 @@ node app.js
 
 # 玩家指令一覽
 
-| Command        | Description |
-| -------------- | ----------- |
-| `/start`       | 創角        |
-| `/inventory`   | 查看道具欄  |
-| `/item_detail` | 查看道具    |
-| `/gather`      | 採集資源    |
-| `/craft`       | 製造物品    |
-| `/use`         | 使用物品    |
+| Command        | Description            |
+| -------------- | ---------------------- |
+| `/start`       | 創角                   |
+| `/inventory`   | 查看道具欄             |
+| `/item_detail` | 查看道具               |
+| `/gather`      | 採集資源               |
+| `/craft`       | 製造物品               |
+| `/use`         | 使用物品               |
+| `/move`        | 移動至其他頻道（地圖） |
 
 # GM 指令一覽
 

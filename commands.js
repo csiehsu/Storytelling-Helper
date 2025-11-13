@@ -75,6 +75,11 @@ const USE_COMMAND = {
   description: "使用道具",
 };
 
+const MOVE_COMMAND = {
+  name: "move",
+  description: "移動至其他位置",
+};
+
 const SAY_COMMAND = {
   name: "say",
   description: "讓系統主動說話",
@@ -115,6 +120,7 @@ const ALL_COMMANDS = [
   GATHER_COMMAND,
   CRAFT_COMMAND,
   USE_COMMAND,
+  MOVE_COMMAND,
   SAY_COMMAND,
   LIKABILITY_COMMAND,
 ];
