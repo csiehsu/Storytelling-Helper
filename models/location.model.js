@@ -8,13 +8,30 @@ const gatherableItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const adjacencySchema = new mongoose.Schema(
+  {
+    // 連接到的目標地點 ID (slug)
+    targetLocationId: { type: String, required: true },
+
+    // 從當前地點移動到目標地點所需的體力消耗（權重）
+    staminaCost: { type: Number, required: true, min: 0 },
+  },
+  { _id: false }
+);
+
 const locationSchema = new mongoose.Schema({
   channelId: { type: String, required: true, unique: true }, // 綁定到 Discord 的頻道 ID
-  locationId: { type: String, required: true, unique: true }, // 地點的唯一標識符
+  locationId: { type: String, required: true, unique: true }, // 地點的唯一標識符 (slug)
   name: { type: String, required: true },
   description: { type: String },
   gatherables: {
     type: [gatherableItemSchema],
+    default: [],
+  },
+
+  // 儲存所有直接相連的地點及其消耗
+  connections: {
+    type: [adjacencySchema],
     default: [],
   },
 });

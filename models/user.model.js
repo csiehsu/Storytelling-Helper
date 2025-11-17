@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
+import GAME_CONFIG from "../config/gameConfig.js";
 
 // 定義 stats 的子模式 (schema)
 const statsSchema = new mongoose.Schema(
@@ -81,6 +82,7 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  stamina: { type: Number, default: GAME_CONFIG.BASE_MAX_STAMINA },
   currentHp: { type: Number, default: 100 },
   currentMp: { type: Number, default: 100 },
   stats: {

@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import Location from "../models/location.model.js";
+import { getConnectionCostFromCache } from "../services/mapCache.js";
 
 async function handleMoveCommand(interaction, res) {
   try {
@@ -16,15 +17,18 @@ async function handleMoveCommand(interaction, res) {
       });
     }
 
-    // 取得玩家已知的地點
+    // 取得玩家已知的地點（不含玩家所在地）
     const knownLocations = user.knownLocations;
     const locations = await Location.find({
-      locationId: { $in: knownLocations },
+      locationId: { $in: knownLocations, $ne: user.locationId },
     });
 
     // 建立下拉式選單選項
     const options = locations.map((loc) => ({
-      label: loc.name,
+      label: `${loc.name} ${getConnectionCostFromCache(
+        user.locationId,
+        loc.locationId
+      )} 體力`,
       description: loc.description || "沒有描述",
       value: loc.locationId,
     }));

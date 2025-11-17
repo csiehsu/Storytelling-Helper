@@ -17,6 +17,7 @@ import {
   verifyKeyMiddleware,
 } from "discord-interactions";
 import connectDB from "./database.js";
+import { initializeMapCache } from "./services/mapCache.js";
 import Item from "./models/item.model.js";
 import User from "./models/user.model.js";
 import Inventory from "./models/inventory.model.js";
@@ -33,9 +34,13 @@ import {
   handleUseItemSelect,
   handleUseQuantitySelect,
 } from "./handlers/useSelectHandler.js";
-import handleSayCommand from "./handlers/sayHandler.js";
 import handleCombatCommand from "./handlers/combatHandler.js";
 import handleTossCommand from "./handlers/interactionHandler.js";
+import handleSayCommand from "./handlers/sayHandler.js";
+import {
+  handleReloadMapCommand,
+  handleSetMapConnectionCommand,
+} from "./handlers/mapHandler.js";
 import {
   validateStartParameters,
   isLegalStr,
@@ -53,6 +58,8 @@ const startApp = async () => {
   try {
     await connectDB();
     console.log("Database connected successfully.");
+    await initializeMapCache();
+    console.log("Map cache initialized successfully.");
   } catch (error) {
     console.error("Failed to connect to the database:", error);
   }
@@ -302,6 +309,16 @@ app.post(
 
       if (name === "say") {
         await handleSayCommand(req.body, res);
+        return;
+      }
+
+      if (name === "reload_map") {
+        await handleReloadMapCommand(req.body, res);
+        return;
+      }
+
+      if (name === "set_map_connection") {
+        await handleSetMapConnectionCommand(req.body, res);
         return;
       }
 

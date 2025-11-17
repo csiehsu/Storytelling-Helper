@@ -80,6 +80,14 @@ const MOVE_COMMAND = {
   description: "移動至其他位置",
 };
 
+const LIKABILITY_COMMAND = {
+  name: "likability",
+  description: "查看好感度",
+};
+
+/**
+ * 管理者專用區
+ */
 const SAY_COMMAND = {
   name: "say",
   description: "讓系統主動說話",
@@ -108,9 +116,52 @@ const SAY_COMMAND = {
   ],
 };
 
-const LIKABILITY_COMMAND = {
-  name: "likability",
-  description: "查看好感度",
+const RELOAD_MAP = {
+  name: "reload_map",
+  description: "重新載入地圖快取（Admin Only）",
+  type: 1, // 聊天指令
+  default_member_permissions: 0, // 這裡設為 "0" 或不填，表示預設無人可見
+  permissions: [
+    {
+      id: "1419547010884829184", // 你要指定的目標身分組 ID
+      type: 1, // 1 表示身分組
+      permission: true, // 設為 true 允許該身分組
+    },
+  ],
+};
+
+const SET_MAP_CONNECTIONS = {
+  name: "set_map_connections",
+  description: "設定地圖連結（Admin Only）",
+  type: 1, // 聊天指令
+  default_member_permissions: 0, // 這裡設為 "0" 或不填，表示預設無人可見
+  permissions: [
+    {
+      id: "1419547010884829184", // 你要指定的目標身分組 ID
+      type: 1, // 1 表示身分組
+      permission: true, // 設為 true 允許該身分組
+    },
+  ],
+  options: [
+    {
+      name: "地點A id",
+      description: "請輸入地點ID (slug)",
+      type: 3,
+      required: true,
+    },
+    {
+      name: "地點B id",
+      description: "請輸入地點ID (slug)",
+      type: 3,
+      required: true,
+    },
+    {
+      name: "體力消耗",
+      description: "請輸入從地點A移動到地點B的體力消耗（非負整數）",
+      type: 4,
+      required: true,
+    },
+  ],
 };
 
 const ALL_COMMANDS = [
@@ -121,8 +172,9 @@ const ALL_COMMANDS = [
   CRAFT_COMMAND,
   USE_COMMAND,
   MOVE_COMMAND,
-  SAY_COMMAND,
   LIKABILITY_COMMAND,
+  SAY_COMMAND,
+  RELOAD_MAP,
 ];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
