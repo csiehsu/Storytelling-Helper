@@ -29,7 +29,11 @@ import handleCraftUpdate from "./handlers/craftUpdateHandler.js";
 import handleCraftSubmit from "./handlers/craftSubmitHandler.js";
 import handleCraftOutput from "./handlers/craftOutputHandler.js";
 import handleUseCommand from "./handlers/useHandler.js";
-import handleMoveCommand from "./handlers/moveHandler.js";
+import {
+  showMoveCommand,
+  handleMoveSelectMenu,
+  handleMoveContinue,
+} from "./handlers/moveHandler.js";
 import {
   handleUseItemSelect,
   handleUseQuantitySelect,
@@ -303,7 +307,7 @@ app.post(
       }
 
       if (name === "move") {
-        await handleMoveCommand(req.body, res);
+        await showMoveCommand(req.body, res);
         return;
       }
 
@@ -369,6 +373,16 @@ app.post(
 
       if (customId.startsWith("toss_item_")) {
         await handleTossCommand(req.body, res);
+        return;
+      }
+
+      if (customId.startsWith("move_select_menu")) {
+        await handleMoveSelectMenu(req.body, res);
+        return;
+      }
+
+      if (customId.startsWith("move_select_continue_")) {
+        await handleMoveContinue(req.body, res);
         return;
       }
     }

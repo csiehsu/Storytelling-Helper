@@ -1,8 +1,81 @@
 import User from "../models/user.model.js";
 import Location from "../models/location.model.js";
-import { getConnectionCostFromCache } from "../services/mapCache.js";
+import {
+  getShortestPathFromCache,
+  getLocationNamesCache,
+} from "../services/mapCache.js";
+import processMoveStep from "../services/moveService.js";
 
-async function handleMoveCommand(interaction, res) {
+async function updateOriginalMessage(webhookUrl, text, components = []) {
+  await fetch(webhookUrl, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content: text,
+      components: components, // 移除選單
+    }),
+  });
+  return;
+}
+
+async function handleMove(destinationId, interaction, res) {
+  // 延遲回覆，確保 Discord 不會顯示 "interaction failed"
+  res.json({ type: 6 });
+  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
+
+  try {
+    const userId = interaction.member.user.id;
+    const user = await User.findOne({ userId });
+    if (!user) {
+      await updateOriginalMessage(webhookUrl, "查無玩家，無法移動。", []);
+      return;
+    }
+    const currentLocationId = user.locationId;
+    const locationNamesCache = getLocationNamesCache();
+    const currentLocationName = locationNamesCache[currentLocationId];
+    const selectedLocationName = locationNamesCache[destinationId];
+    const pathResult = getShortestPathFromCache(
+      currentLocationId,
+      destinationId
+    );
+
+    if (!pathResult || !pathResult.path) {
+      await updateOriginalMessage(
+        webhookUrl,
+        `無法從 ${currentLocationName} 移動到 ${selectedLocationName}。`,
+        []
+      );
+      return;
+    }
+    const staminaCost = pathResult.cost;
+    if (user.stamina < staminaCost) {
+      await updateOriginalMessage(
+        webhookUrl,
+        `體力不足，無法移動到 ${selectedLocationName}。需要 ${staminaCost} 點體力，現有 ${user.stamina} 點。`,
+        []
+      );
+      return;
+    }
+
+    // 更新玩家狀態 (啟動移動)
+    user.currentMove = {
+      isMoving: true,
+      fullPath: pathResult.path,
+      currentIndex: 0,
+      destinationId: destinationId,
+      totalCost: pathResult.cost,
+    };
+    await user.save();
+
+    // 從第一步開始檢查 (因為 0 是起點)
+    await processMoveStep(interaction, user, 1);
+  } catch (error) {
+    console.error("處理移動選單時發生錯誤:", error);
+    await updateOriginalMessage(webhookUrl, "處理移動選單時發生錯誤。", []);
+  }
+}
+
+export async function showMoveCommand(interaction, res) {
   try {
     const userId = interaction.member.user.id;
     const user = await User.findOne({ userId });
@@ -25,11 +98,10 @@ async function handleMoveCommand(interaction, res) {
 
     // 建立下拉式選單選項
     const options = locations.map((loc) => ({
-      label: `${loc.name} ${getConnectionCostFromCache(
-        user.locationId,
-        loc.locationId
-      )} 體力`,
-      description: loc.description || "沒有描述",
+      label: `${loc.name}`,
+      description: `${
+        getShortestPathFromCache(user.locationId, loc.locationId).cost
+      } 體力`,
       value: loc.locationId,
     }));
     const actionRow = {
@@ -47,7 +119,9 @@ async function handleMoveCommand(interaction, res) {
     return res.json({
       type: 4,
       data: {
-        content: "請選擇移動地點",
+        content: `請選擇移動地點。目前體力：${user.stamina}。目前所在地：${
+          getLocationNamesCache()[user.locationId]
+        }`,
         components: [actionRow],
         flags: 64,
       },
@@ -64,4 +138,32 @@ async function handleMoveCommand(interaction, res) {
   }
 }
 
-export default handleMoveCommand;
+export async function handleMoveSelectMenu(interaction, res) {
+  const selectedLocationId =
+    interaction.data.values && interaction.data.values[0];
+  if (!selectedLocationId) {
+    return res.json({
+      type: 4,
+      data: {
+        content: "未選擇有效的地點",
+        flags: 64,
+      },
+    });
+  }
+  await handleMove(selectedLocationId, interaction, res);
+}
+
+export async function handleMoveContinue(interaction, res) {
+  const customId = interaction.data.custom_id;
+  const destinationId = customId.split("move_select_continue_")[1];
+  if (!destinationId) {
+    return res.json({
+      type: 4,
+      data: {
+        content: "無效的繼續移動請求",
+        flags: 64,
+      },
+    });
+  }
+  await handleMove(destinationId, interaction, res);
+}

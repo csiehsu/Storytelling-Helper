@@ -19,6 +19,15 @@ const adjacencySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const eventInfoSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    forced: { type: Boolean, required: true },
+  },
+  { _id: false }
+);
+
 const locationSchema = new mongoose.Schema({
   channelId: { type: String, required: true, unique: true }, // 綁定到 Discord 的頻道 ID
   locationId: { type: String, required: true, unique: true }, // 地點的唯一標識符 (slug)
@@ -34,6 +43,14 @@ const locationSchema = new mongoose.Schema({
     type: [adjacencySchema],
     default: [],
   },
+
+  hasEvent: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
+
+  eventInfo: { type: eventInfoSchema },
 });
 
 const Location = mongoose.model("Location", locationSchema);

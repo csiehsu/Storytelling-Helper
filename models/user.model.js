@@ -110,6 +110,15 @@ const userSchema = new mongoose.Schema({
     type: [String], // 儲存玩家已經探索過的地點的 _id/slug
     default: ["PIONEER_CABIN", "VERDANT_BAY_PORT"],
   },
+
+  currentMove: {
+    isMoving: { type: Boolean, default: false }, // 是否正在移動中
+    fullPath: { type: [String], default: [] }, // 完整的路徑 ID 陣列 (e.g., ['A', 'B', 'C', 'D'])
+    currentIndex: { type: Number, default: 0 }, // 當前已走到路徑中的第幾個節點索引 (0-based)
+    destinationId: { type: String, nullable: true }, // 最終目的地 ID
+    totalCost: { type: Number, default: 0 }, // 該旅程的總體力消耗
+  },
+
   createdAt: {
     type: Date,
     default: Date.now,
