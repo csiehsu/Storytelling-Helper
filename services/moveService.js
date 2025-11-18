@@ -47,15 +47,20 @@ function calculateTraveledCost(fullPath, stopIndex, totalCost) {
  * @param {number} startIndex - 從路徑的哪個索引開始檢查 (通常為 1 或上次停下的位置+1)
  */
 async function processMoveStep(interaction, player, startIndex) {
-  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}`;
-  const webhookOriginalUrl = webhookUrl + "/messages/@original";
+  const apiUrl = `https://discord.com/api/v10/channels/${interaction.channel_id}/messages`;
+  const webhookOriginalUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
 
   const { fullPath, destinationId, totalCost } = player.currentMove;
   const locationNamesCache = getLocationNamesCache();
 
   for (let i = startIndex; i < fullPath.length; i++) {
+    const startId = fullPath[0];
+    const startLocationName = locationNamesCache[startId];
     const currentId = fullPath[i];
+    const currentLocationName = locationNamesCache[currentId];
+    const destinationLocationName = locationNamesCache[destinationId];
     const isDestination = currentId === destinationId;
+    const playerName = player.characterName;
 
     // 1. 計算累積消耗並檢查體力 (必須在每次循環開始時進行)
     const traveledCost = calculateTraveledCost(fullPath, i, totalCost);
@@ -75,11 +80,11 @@ async function processMoveStep(interaction, player, startIndex) {
         webhookOriginalUrl,
         `扣除 ${lastTraveledCost} 點體力，剩餘 ${
           player.stamina - lastTraveledCost
-        }。`
+        }。\n距離目的地尚需 ${totalCost - lastTraveledCost} 。`
       );
       await sendFollowUpMessage(
-        webhookUrl,
-        `${player.characterName}的體力不足 ${traveledCost}，在 ${locationNamesCache[lastStopId]} 停下休息。`
+        apiUrl,
+        `${playerName}離開${startLocationName}，準備前往${destinationLocationName}。\n但途中體力不足，因此在 ${locationNamesCache[lastStopId]} 停下休息。`
       );
       return; // 流程結束
     }
@@ -104,13 +109,11 @@ async function processMoveStep(interaction, player, startIndex) {
       await finalizeMove(player, destinationId, totalCost);
       await updateOriginalMessage(
         webhookOriginalUrl,
-        `已扣除體力 ${totalCost} 點，剩餘 ${
-          player.stamina - totalCost
-        }。${eventMessage}`
+        `已扣除體力 ${totalCost} 點，剩餘 ${player.stamina - totalCost}。`
       );
       await sendFollowUpMessage(
-        webhookUrl,
-        `${player.characterName}移動至${locationNamesCache[destinationId]}。`
+        apiUrl,
+        `${playerName}離開${startLocationName}，移動至${destinationLocationName}。\n${eventMessage}`
       );
       return; // 流程結束
     } else if (hasEvent(currentId)) {
@@ -125,8 +128,8 @@ async function processMoveStep(interaction, player, startIndex) {
           }。移動終止。`
         );
         await sendFollowUpMessage(
-          webhookUrl,
-          `${player.characterName}經過${locationNamesCache[currentId]}時，${eventInfo.description}\n看來是無法再前進了。`
+          apiUrl,
+          `${playerName}離開${startLocationName}，準備前往${destinationLocationName}。\n途中經過${currentLocationName}時，${eventInfo.description}\n看來是無法再前進了。`
         );
         return; // 流程結束
       } else {
@@ -137,11 +140,11 @@ async function processMoveStep(interaction, player, startIndex) {
 
         // 建立按鈕
         const moveButton = new ButtonBuilder()
-          .setCustomId(`move_select_continue_${destinationId}`)
+          .setCustomId(`move_continue_${destinationId}`)
           .setLabel("前進")
           .setStyle(ButtonStyle.Success);
         const stopButton = new ButtonBuilder()
-          .setCustomId(`move_select_stop`)
+          .setCustomId(`move_stop`)
           .setLabel("停下")
           .setStyle(ButtonStyle.Secondary);
         const actionRow = new ActionRowBuilder().addComponents(
@@ -154,12 +157,12 @@ async function processMoveStep(interaction, player, startIndex) {
           webhookOriginalUrl,
           `目前已耗費 ${traveledCost} 點體力，剩餘 ${
             player.stamina - traveledCost
-          }。`,
+          }。距離目的地尚需 ${totalCost - traveledCost}。`,
           [actionRow]
         );
         await sendFollowUpMessage(
-          webhookUrl,
-          `${player.characterName}經過${locationNamesCache[currentId]}時，${eventInfo.description}`
+          apiUrl,
+          `${player.characterName}離開${startLocationName}，準備前往${destinationLocationName}。\n途中經過${currentLocationName}時，${eventInfo.description}`
         );
         return;
       }
@@ -180,7 +183,7 @@ async function finalizeMove(player, finalLocationId, cost) {
     {
       $inc: { stamina: -cost }, // 扣除消耗
       $set: { locationId: finalLocationId }, // 更新位置
-      $unset: { currentMove: "" }, // 清除移動狀態
+      $unset: { currentMove: {} }, // 清除移動狀態
     }
   );
 }

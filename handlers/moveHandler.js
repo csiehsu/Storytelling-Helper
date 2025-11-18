@@ -5,18 +5,10 @@ import {
   getLocationNamesCache,
 } from "../services/mapCache.js";
 import processMoveStep from "../services/moveService.js";
-
-async function updateOriginalMessage(webhookUrl, text, components = []) {
-  await fetch(webhookUrl, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content: text,
-      components: components, // 移除選單
-    }),
-  });
-  return;
-}
+import {
+  sendFollowUpMessage,
+  updateOriginalMessage,
+} from "../services/sendMessage.js";
 
 async function handleMove(destinationId, interaction, res) {
   // 延遲回覆，確保 Discord 不會顯示 "interaction failed"
@@ -155,7 +147,7 @@ export async function handleMoveSelectMenu(interaction, res) {
 
 export async function handleMoveContinue(interaction, res) {
   const customId = interaction.data.custom_id;
-  const destinationId = customId.split("move_select_continue_")[1];
+  const destinationId = customId.split("move_continue_")[1];
   if (!destinationId) {
     return res.json({
       type: 4,
@@ -166,4 +158,34 @@ export async function handleMoveContinue(interaction, res) {
     });
   }
   await handleMove(destinationId, interaction, res);
+}
+
+export async function handleMoveStop(interaction, res) {
+  // 延遲回覆，確保 Discord 不會顯示 "interaction failed"
+  res.json({ type: 6 });
+  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
+  const apiUrl = `https://discord.com/api/v10/channels/${interaction.channel_id}/messages`;
+
+  try {
+    const locationNamesCache = getLocationNamesCache();
+    const userId = interaction.member.user.id;
+    const user = await User.findOne({ userId });
+    if (!user) {
+      await updateOriginalMessage(webhookUrl, "查無玩家，無法停止移動。");
+      return;
+    }
+    await fetch(webhookUrl, {
+      method: "DELETE",
+    });
+    await sendFollowUpMessage(
+      apiUrl,
+      `${user.characterName}選擇在 ${
+        locationNamesCache[user.locationId]
+      } 停下腳步。`
+    );
+    return;
+  } catch (error) {
+    console.error("處理停止移動時發生錯誤:", error);
+    await updateOriginalMessage(webhookUrl, "處理停止移動時發生錯誤。");
+  }
 }

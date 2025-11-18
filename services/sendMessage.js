@@ -20,6 +20,7 @@ export async function sendFollowUpMessage(webhookUrl, text, components = []) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bot ${process.env.DISCORD_TOKEN}`, // 使用 Bot Token 進行授權
       },
       // 將 JavaScript 物件轉換為 JSON 字串
       body: JSON.stringify({

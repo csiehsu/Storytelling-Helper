@@ -33,6 +33,7 @@ import {
   showMoveCommand,
   handleMoveSelectMenu,
   handleMoveContinue,
+  handleMoveStop,
 } from "./handlers/moveHandler.js";
 import {
   handleUseItemSelect,
@@ -381,8 +382,13 @@ app.post(
         return;
       }
 
-      if (customId.startsWith("move_select_continue_")) {
+      if (customId.startsWith("move_continue_")) {
         await handleMoveContinue(req.body, res);
+        return;
+      }
+
+      if (customId.startsWith("move_stop")) {
+        await handleMoveStop(req.body, res);
         return;
       }
     }
