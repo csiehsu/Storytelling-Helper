@@ -13,13 +13,12 @@ import {
 async function handleMove(destinationId, interaction, res) {
   // 延遲回覆，確保 Discord 不會顯示 "interaction failed"
   res.json({ type: 6 });
-  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
 
   try {
     const userId = interaction.member.user.id;
     const user = await User.findOne({ userId });
     if (!user) {
-      await updateOriginalMessage(webhookUrl, "查無玩家，無法移動。", []);
+      await updateOriginalMessage(interaction, "查無玩家，無法移動。", []);
       return;
     }
     const currentLocationId = user.locationId;
@@ -33,7 +32,7 @@ async function handleMove(destinationId, interaction, res) {
 
     if (!pathResult || !pathResult.path) {
       await updateOriginalMessage(
-        webhookUrl,
+        interaction,
         `無法從 ${currentLocationName} 移動到 ${selectedLocationName}。`,
         []
       );
@@ -42,7 +41,7 @@ async function handleMove(destinationId, interaction, res) {
     const staminaCost = pathResult.cost;
     if (user.stamina < staminaCost) {
       await updateOriginalMessage(
-        webhookUrl,
+        interaction,
         `體力不足，無法移動到 ${selectedLocationName}。需要 ${staminaCost} 點體力，現有 ${user.stamina} 點。`,
         []
       );
@@ -63,7 +62,7 @@ async function handleMove(destinationId, interaction, res) {
     await processMoveStep(interaction, user, 1);
   } catch (error) {
     console.error("處理移動選單時發生錯誤:", error);
-    await updateOriginalMessage(webhookUrl, "處理移動選單時發生錯誤。", []);
+    await updateOriginalMessage(interaction, "處理移動選單時發生錯誤。", []);
   }
 }
 
@@ -163,22 +162,20 @@ export async function handleMoveContinue(interaction, res) {
 export async function handleMoveStop(interaction, res) {
   // 延遲回覆，確保 Discord 不會顯示 "interaction failed"
   res.json({ type: 6 });
-  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
-  const apiUrl = `https://discord.com/api/v10/channels/${interaction.channel_id}/messages`;
-
   try {
     const locationNamesCache = getLocationNamesCache();
     const userId = interaction.member.user.id;
     const user = await User.findOne({ userId });
     if (!user) {
-      await updateOriginalMessage(webhookUrl, "查無玩家，無法停止移動。");
+      await updateOriginalMessage(interaction, "查無玩家，無法停止移動。");
       return;
     }
-    await fetch(webhookUrl, {
-      method: "DELETE",
-    });
+    await updateOriginalMessage(
+      interaction,
+      `已停止移動。剩餘 ${user.stamina} 體力。`
+    );
     await sendFollowUpMessage(
-      apiUrl,
+      interaction,
       `${user.characterName}選擇在 ${
         locationNamesCache[user.locationId]
       } 停下腳步。`
@@ -186,6 +183,6 @@ export async function handleMoveStop(interaction, res) {
     return;
   } catch (error) {
     console.error("處理停止移動時發生錯誤:", error);
-    await updateOriginalMessage(webhookUrl, "處理停止移動時發生錯誤。");
+    await updateOriginalMessage(interaction, "處理停止移動時發生錯誤。");
   }
 }

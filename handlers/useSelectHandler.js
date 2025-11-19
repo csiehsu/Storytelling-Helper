@@ -1,20 +1,7 @@
 import User from "../models/user.model.js";
 import Inventory from "../models/inventory.model.js";
 import Item from "../models/item.model.js";
-
-async function updateOriginalMessage(interaction, text, components = []) {
-  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
-
-  await fetch(webhookUrl, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content: text,
-      components: components, // 移除選單
-    }),
-  });
-  return;
-}
+import { updateOriginalMessage } from "../services/sendMessage.js";
 
 // 從玩家道具欄扣除道具並套用效果
 async function useItem(userId, itemId, quantityToUse) {

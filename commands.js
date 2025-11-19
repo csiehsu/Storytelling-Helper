@@ -144,13 +144,13 @@ const SET_MAP_CONNECTIONS = {
   ],
   options: [
     {
-      name: "地點A id",
+      name: "地點A_ID",
       description: "請輸入地點ID (slug)",
       type: 3,
       required: true,
     },
     {
-      name: "地點B id",
+      name: "地點B_ID",
       description: "請輸入地點ID (slug)",
       type: 3,
       required: true,

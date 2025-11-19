@@ -79,24 +79,3 @@ export function wrapMessage(type, content, flag, embeds = []) {
     },
   };
 }
-
-export function translateAttributes(key) {
-  let name = key;
-  switch (key) {
-    case "attack":
-      name = "攻擊力";
-      break;
-    case "defense":
-      name = "防禦力";
-      break;
-    case "weight":
-      name = "重量";
-      break;
-    case "durability":
-      name = "耐久度";
-      break;
-    default:
-      break;
-  }
-  return name;
-}

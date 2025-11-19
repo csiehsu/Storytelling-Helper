@@ -6,19 +6,10 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from "discord.js";
-
-async function updateOriginalMessage(webhookBaseUrl, text, components = []) {
-  const webhookUrl = `${webhookBaseUrl}/messages/@original`;
-  await fetch(webhookUrl, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content: text,
-      components: components, // 移除選單
-    }),
-  });
-  return;
-}
+import {
+  updateOriginalMessage,
+  sendFollowUpMessage,
+} from "../services/sendMessage.js";
 
 async function handleSayCommand(interaction, res) {
   res.json({
@@ -26,7 +17,6 @@ async function handleSayCommand(interaction, res) {
   });
   try {
     const options = interaction.data.options;
-    const webhookBaseUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}`;
     // 0: 戰鬥遭遇, 1: 發現道具, 2: 其他純文字
     const messageType = Number(
       options.find((opt) => opt.name === "類型").value
@@ -38,11 +28,11 @@ async function handleSayCommand(interaction, res) {
     let components;
 
     if (messageType === 2) {
-      await updateOriginalMessage(webhookBaseUrl, messageInfo);
+      await updateOriginalMessage(interaction, messageInfo);
     } else if (messageType === 0) {
       const enemy = await NPC.findOne({ name: messageInfo });
       if (!enemy) {
-        await updateOriginalMessage(webhookBaseUrl, "查無此敵人");
+        await updateOriginalMessage(interaction, "查無此敵人");
       }
       imageUrl =
         enemy.imageUrl ||
@@ -92,7 +82,7 @@ async function handleSayCommand(interaction, res) {
     } else if (messageType === 1) {
       const item = await Item.findOne({ name: messageInfo });
       if (!item) {
-        await updateOriginalMessage(webhookBaseUrl, "查無此道具");
+        await updateOriginalMessage(interaction, "查無此道具");
       }
 
       imageUrl = item.imageUrl || "";
@@ -109,7 +99,7 @@ async function handleSayCommand(interaction, res) {
       const actionRow = new ActionRowBuilder().addComponents(getButton);
       components = [actionRow];
     } else {
-      await updateOriginalMessage(webhookBaseUrl, "類型選項錯誤");
+      await updateOriginalMessage(interaction, "類型選項錯誤");
     }
 
     const embed = new EmbedBuilder()
@@ -118,25 +108,16 @@ async function handleSayCommand(interaction, res) {
       .setImage(imageUrl)
       .addFields(embedFields);
 
-    await fetch(`${webhookBaseUrl}/messages/@original`, {
-      method: "DELETE",
-    });
-    const CHANNEL_ID = interaction.channel_id; // 互動事件中的頻道 ID
-    const apiUrl = `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages`;
-    await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bot ${process.env.DISCORD_TOKEN}`, // 使用 Bot Token 進行授權
-      },
-      body: JSON.stringify({
-        embeds: [embed],
-        components: components,
-      }),
-    });
+    await fetch(
+      `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`,
+      {
+        method: "DELETE",
+      }
+    );
+    await sendFollowUpMessage(interaction, "", components, embed);
   } catch (error) {
     console.error("處理使用指令時發生錯誤:", error);
-    await updateOriginalMessage(webhookBaseUrl, "處理使用指令時發生錯誤");
+    await updateOriginalMessage(interaction, "處理使用指令時發生錯誤");
   }
 }
 

@@ -3,26 +3,14 @@ import User from "../models/user.model.js";
 import Inventory from "../models/inventory.model.js";
 import Item from "../models/item.model.js";
 import Building from "../models/building.model.js";
+import { updateOriginalMessage } from "../services/sendMessage.js";
 
-async function updateOriginalMessage(webhookUrl, text, components = []) {
-  await fetch(webhookUrl, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content: text,
-      components: components, // 移除選單
-    }),
-  });
-  return;
-}
 async function handleRecipeSelect(interaction, res) {
   // 在 3 秒內立即回覆一個延遲訊息，避免超時。另外一個作用是等等才能編輯這個訊息。
   res.json({
     type: 6, // 回覆類型 6: 延遲更新
     content: "正在處理請求...",
   });
-
-  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
 
   try {
     const userId = interaction.member.user.id;
@@ -34,13 +22,13 @@ async function handleRecipeSelect(interaction, res) {
       User.findOne({ userId }).lean(),
     ]);
     if (!recipe || !recipe.name || !recipe.name.en) {
-      return await updateOriginalMessage(webhookUrl, "找不到該配方");
+      return await updateOriginalMessage(interaction, "找不到該配方");
     }
     if (!inventory) {
-      return await updateOriginalMessage(webhookUrl, "查無道具欄");
+      return await updateOriginalMessage(interaction, "查無道具欄");
     }
     if (!user.learnedRecipes.includes(selectedRecipeId)) {
-      return await updateOriginalMessage(webhookUrl, "尚未學會此配方");
+      return await updateOriginalMessage(interaction, "尚未學會此配方");
     }
 
     // 檢查該地點是否有要求的工具
@@ -55,7 +43,7 @@ async function handleRecipeSelect(interaction, res) {
 
         // 如果缺少任何一個，立即回報錯誤並結束
         if (!requiredToolInstance) {
-          return await updateOriginalMessage(webhookUrl, `缺少${type}工具`);
+          return await updateOriginalMessage(interaction, `缺少${type}工具`);
         }
       }
     }
@@ -111,15 +99,15 @@ async function handleRecipeSelect(interaction, res) {
 
     if (shortage) {
       return await updateOriginalMessage(
-        webhookUrl,
+        interaction,
         `缺少${reqItem.type}類型的材料`
       );
     }
 
-    await updateOriginalMessage(webhookUrl, "請選擇材料：", components);
+    await updateOriginalMessage(interaction, "請選擇材料：", components);
   } catch (error) {
     console.error("處理選單互動時發生錯誤:", error);
-    await updateOriginalMessage(webhookUrl, "處理請求時發生了錯誤");
+    await updateOriginalMessage(interaction, "處理請求時發生了錯誤");
   }
 }
 

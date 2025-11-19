@@ -47,9 +47,6 @@ function calculateTraveledCost(fullPath, stopIndex, totalCost) {
  * @param {number} startIndex - 從路徑的哪個索引開始檢查 (通常為 1 或上次停下的位置+1)
  */
 async function processMoveStep(interaction, player, startIndex) {
-  const apiUrl = `https://discord.com/api/v10/channels/${interaction.channel_id}/messages`;
-  const webhookOriginalUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
-
   const { fullPath, destinationId, totalCost } = player.currentMove;
   const locationNamesCache = getLocationNamesCache();
 
@@ -77,13 +74,13 @@ async function processMoveStep(interaction, player, startIndex) {
       await finalizeMove(player, lastStopId, lastTraveledCost);
 
       await updateOriginalMessage(
-        webhookOriginalUrl,
+        interaction,
         `扣除 ${lastTraveledCost} 點體力，剩餘 ${
           player.stamina - lastTraveledCost
         }。\n距離目的地尚需 ${totalCost - lastTraveledCost} 。`
       );
       await sendFollowUpMessage(
-        apiUrl,
+        interaction,
         `${playerName}離開${startLocationName}，準備前往${destinationLocationName}。\n但途中體力不足，因此在 ${locationNamesCache[lastStopId]} 停下休息。`
       );
       return; // 流程結束
@@ -108,11 +105,11 @@ async function processMoveStep(interaction, player, startIndex) {
         : "";
       await finalizeMove(player, destinationId, totalCost);
       await updateOriginalMessage(
-        webhookOriginalUrl,
+        interaction,
         `已扣除體力 ${totalCost} 點，剩餘 ${player.stamina - totalCost}。`
       );
       await sendFollowUpMessage(
-        apiUrl,
+        interaction,
         `${playerName}離開${startLocationName}，移動至${destinationLocationName}。\n${eventMessage}`
       );
       return; // 流程結束
@@ -122,13 +119,13 @@ async function processMoveStep(interaction, player, startIndex) {
         // 強制事件，強制停下，不顯示按鈕
         await finalizeMove(player, currentId, traveledCost);
         await updateOriginalMessage(
-          webhookOriginalUrl,
+          interaction,
           `已扣除 ${traveledCost} 點體力，剩餘 ${
             player.stamina - traveledCost
           }。移動終止。`
         );
         await sendFollowUpMessage(
-          apiUrl,
+          interaction,
           `${playerName}離開${startLocationName}，準備前往${destinationLocationName}。\n途中經過${currentLocationName}時，${eventInfo.description}\n看來是無法再前進了。`
         );
         return; // 流程結束
@@ -154,14 +151,14 @@ async function processMoveStep(interaction, player, startIndex) {
         await finalizeMove(player, currentId, traveledCost);
         // 顯示互動選項
         await updateOriginalMessage(
-          webhookOriginalUrl,
+          interaction,
           `目前已耗費 ${traveledCost} 點體力，剩餘 ${
             player.stamina - traveledCost
           }。距離目的地尚需 ${totalCost - traveledCost}。`,
           [actionRow]
         );
         await sendFollowUpMessage(
-          apiUrl,
+          interaction,
           `${player.characterName}離開${startLocationName}，準備前往${destinationLocationName}。\n途中經過${currentLocationName}時，${eventInfo.description}`
         );
         return;

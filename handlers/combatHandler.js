@@ -1,22 +1,9 @@
 import Inventory from "../models/inventory.model.js";
 import NPC from "../models/npc.model.js";
 import Item from "../models/item.model.js";
-
-async function updateOriginalMessage(webhookBaseUrl, text, components = []) {
-  const webhookUrl = `${webhookBaseUrl}/messages/@original`;
-  await fetch(webhookUrl, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content: text,
-      components: components, // 移除選單
-    }),
-  });
-  return;
-}
+import { updateOriginalMessage } from "../services/sendMessage.js";
 
 async function handleCombatCommand(interaction, res) {
-  const webhookBaseUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}`;
   res.json({
     type: 5, // Deferred Message Update
   });
@@ -26,28 +13,28 @@ async function handleCombatCommand(interaction, res) {
     const target_npcId = custom_id.split("_")[1];
     const action = custom_id.split("_")[2];
 
+    console.log("custom_id:", custom_id);
+    console.log("target_npcId:", target_npcId);
+    console.log("action:", action);
     if (!target_npcId) {
-      await updateOriginalMessage(webhookBaseUrl, "找不到目標敵人ID");
+      await updateOriginalMessage(interaction, "找不到目標敵人ID");
     }
 
     if (!action) {
-      await updateOriginalMessage(webhookBaseUrl, "找不到動作");
+      await updateOriginalMessage(interaction, "找不到動作");
     }
 
     const targetNpc = await NPC.findOne({ npcId: target_npcId });
     if (!targetNpc) {
-      await updateOriginalMessage(webhookBaseUrl, "找不到目標敵人");
+      await updateOriginalMessage(interaction, "找不到目標敵人");
     }
 
     if (action === "fight") {
-      await updateOriginalMessage(
-        webhookBaseUrl,
-        `你選擇攻擊${targetNpc.name}`
-      );
+      await updateOriginalMessage(interaction, `你選擇攻擊${targetNpc.name}`);
     } else if (action === "toss") {
       const inventory = await Inventory.findOne({ userId }).lean();
       if (!inventory || !inventory.items || inventory.items.length === 0) {
-        return await updateOriginalMessage(webhookBaseUrl, "背包是空的");
+        return await updateOriginalMessage(interaction, "背包是空的");
       }
 
       // 將背包中的道具 ID 和數量存入 Map
@@ -73,7 +60,7 @@ async function handleCombatCommand(interaction, res) {
       });
 
       if (options.length === 0) {
-        return await updateOriginalMessage(webhookBaseUrl, "背包是空的");
+        return await updateOriginalMessage(interaction, "背包是空的");
       }
 
       const selectMenu = {
@@ -83,33 +70,24 @@ async function handleCombatCommand(interaction, res) {
         placeholder: "選擇投擲物品",
       };
       const components = [{ type: 1, components: [selectMenu] }];
-      return await updateOriginalMessage(webhookBaseUrl, "", components);
+      return await updateOriginalMessage(interaction, "", components);
     } else if (action === "stroke") {
-      await updateOriginalMessage(
-        webhookBaseUrl,
-        `你選擇撫摸${targetNpc.name}`
-      );
+      await updateOriginalMessage(interaction, `你選擇撫摸${targetNpc.name}`);
     } else if (action === "feed") {
-      await updateOriginalMessage(
-        webhookBaseUrl,
-        `你選擇餵食${targetNpc.name}`
-      );
+      await updateOriginalMessage(interaction, `你選擇餵食${targetNpc.name}`);
     } else if (action === "attract") {
-      await updateOriginalMessage(
-        webhookBaseUrl,
-        `你選擇吸引${targetNpc.name}`
-      );
+      await updateOriginalMessage(interaction, `你選擇吸引${targetNpc.name}`);
     } else if (action === "run") {
       await updateOriginalMessage(
-        webhookBaseUrl,
+        interaction,
         `你選擇逃跑，離開${targetNpc.name}`
       );
     } else {
-      await updateOriginalMessage(webhookBaseUrl, "不支援的動作");
+      await updateOriginalMessage(interaction, "不支援的動作");
     }
   } catch (error) {
     console.error("處理使用指令時發生錯誤:", error);
-    await updateOriginalMessage(webhookBaseUrl, "處理使用指令時發生錯誤");
+    await updateOriginalMessage(interaction, "處理使用指令時發生錯誤");
   }
 }
 

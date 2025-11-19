@@ -1,22 +1,32 @@
-export async function updateOriginalMessage(webhookUrl, text, components = []) {
+export async function updateOriginalMessage(
+  interaction,
+  text,
+  components = [],
+  embed = null
+) {
+  const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
   await fetch(webhookUrl, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       content: text,
       components: components, // 移除選單
+      embeds: [embed],
     }),
   });
   return;
 }
 
-export async function sendFollowUpMessage(webhookUrl, text, components = []) {
-  if (!webhookUrl) {
-    throw new Error("no webhook url.");
-  }
+export async function sendFollowUpMessage(
+  interaction,
+  text,
+  components = [],
+  embed = null
+) {
+  const apiUrl = `https://discord.com/api/v10/channels/${interaction.channel_id}/messages`;
 
   try {
-    const response = await fetch(webhookUrl, {
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -26,6 +36,7 @@ export async function sendFollowUpMessage(webhookUrl, text, components = []) {
       body: JSON.stringify({
         content: text,
         components: components,
+        embeds: [embed],
       }),
     });
 
