@@ -14,11 +14,13 @@ import {
   showGatherMenu,
   handleGatherSelect,
 } from "./handlers/gatherHandler.js";
-import handleCraftCommand from "./handlers/craftHandler.js";
-import handleRecipeSelect from "./handlers/craftSelectHandler.js";
-import handleCraftUpdate from "./handlers/craftUpdateHandler.js";
-import handleCraftSubmit from "./handlers/craftSubmitHandler.js";
-import handleCraftOutput from "./handlers/craftOutputHandler.js";
+import {
+  showCraftRecipeMenu,
+  showCraftMaterialMenu,
+  showCraftQuantityMenu,
+  confirmCraft,
+  handleCraftProcess,
+} from "./handlers/craftHandler.js";
 import handleUseCommand from "./handlers/useHandler.js";
 import {
   showMoveCommand,
@@ -104,7 +106,7 @@ app.post(
 
       // "craft" command
       if (name === "craft") {
-        await handleCraftCommand(req.body, res);
+        await showCraftRecipeMenu(req.body, res);
         return;
       }
 
@@ -149,19 +151,19 @@ app.post(
         return;
       }
       if (customId === "craft_select") {
-        await handleRecipeSelect(req.body, res);
+        await showCraftMaterialMenu(req.body, res);
         return;
       }
       if (customId.startsWith("craft_material_select")) {
-        await handleCraftUpdate(req.body, res);
+        await showCraftQuantityMenu(req.body, res);
         return;
       }
       if (customId.startsWith("craft_quantity_select")) {
-        await handleCraftSubmit(req.body, res);
+        await confirmCraft(req.body, res);
         return;
       }
       if (customId.startsWith("craft_submit")) {
-        await handleCraftOutput(req.body, res);
+        await handleCraftProcess(req.body, res);
         return;
       }
       if (customId.startsWith("use_item_select")) {

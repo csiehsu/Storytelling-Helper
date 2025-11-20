@@ -2,19 +2,32 @@ export async function updateOriginalMessage(
   interaction,
   text,
   components = [],
-  embed = null
+  embed
 ) {
   const webhookUrl = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
-  await fetch(webhookUrl, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      content: text,
-      components: components, // 移除選單
-      embeds: [embed],
-    }),
-  });
-  return;
+  // discord 要求 embed 不得為空，只有在 embed 存在時才加入 embeds 陣列
+  const bodyPayload = {
+    content: text,
+    components: components,
+  };
+  if (embed) {
+    bodyPayload.embeds = [embed];
+  }
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bodyPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("API 編輯原始訊息失敗:", response.status, errorData);
+      throw new Error(`Failed to update original message: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("網路或 Fetch 錯誤:", error);
+  }
 }
 
 export async function sendFollowUpMessage(
